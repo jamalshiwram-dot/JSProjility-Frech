@@ -751,6 +751,9 @@ function App() {
           />
         )}
       </main>
+      
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 }
