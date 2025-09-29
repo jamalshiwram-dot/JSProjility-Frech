@@ -706,7 +706,7 @@ function App() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <BarChart3Icon className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">PM Central</h1>
+              <h1 className="text-2xl font-bold text-gray-900">JS Projility</h1>
             </div>
             
             {currentView === 'dashboard' && (
