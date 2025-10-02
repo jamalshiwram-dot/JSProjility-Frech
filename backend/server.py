@@ -121,6 +121,14 @@ class ResourceCreate(BaseModel):
     allocated_amount: float = 0.0
     description: Optional[str] = None
 
+class ResourceUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[ResourceType] = None
+    cost_per_unit: Optional[float] = None
+    availability: Optional[str] = None
+    allocated_amount: Optional[float] = None
+    description: Optional[str] = None
+
 class Milestone(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
