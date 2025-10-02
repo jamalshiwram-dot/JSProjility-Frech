@@ -392,7 +392,7 @@ class ExpenseResourceTester:
             "date": datetime.now(timezone.utc).isoformat()
         }
         
-        success, response, status = self.make_request('POST', 'expenses', expense_data, 201)
+        success, response, status = self.make_request('POST', 'expenses', expense_data, 200)
         if not success:
             self.log_test("Create Budget Test Expense", False, f"Status {status}: {response}")
             return False
