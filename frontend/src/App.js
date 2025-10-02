@@ -61,10 +61,21 @@ const getStageColor = (stage) => {
     planning: 'bg-yellow-100 text-yellow-800',
     execution: 'bg-green-100 text-green-800',
     monitoring: 'bg-purple-100 text-purple-800',
-    closure: 'bg-gray-100 text-gray-800'
+    closing: 'bg-orange-100 text-orange-800',
+    closed: 'bg-gray-100 text-gray-800'
   };
   return colors[stage] || 'bg-gray-100 text-gray-800';
 };
+
+// Project stages for dropdown
+const PROJECT_STAGES = [
+  { value: 'initiation', label: 'Initiation' },
+  { value: 'planning', label: 'Planning' },
+  { value: 'execution', label: 'Execution' },
+  { value: 'monitoring', label: 'Monitoring' },
+  { value: 'closing', label: 'Closing' },
+  { value: 'closed', label: 'Closed' }
+];
 
 // Dashboard Component
 const Dashboard = ({ projects, onProjectSelect }) => {
