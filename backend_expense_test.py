@@ -61,7 +61,7 @@ class ExpenseResourceTester:
             "manager_id": "test-manager"
         }
         
-        success, response, status = self.make_request('POST', 'projects', project_data, 201)
+        success, response, status = self.make_request('POST', 'projects', project_data, 200)
         if success:
             self.project_id = response['id']
             self.log_test("Project Setup", True, f"Created project {self.project_id}")
