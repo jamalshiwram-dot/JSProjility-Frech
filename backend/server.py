@@ -44,6 +44,7 @@ class ProjectStage(str, Enum):
 
 class ResourceType(str, Enum):
     TEAM_MEMBER = "team_member"
+    VENDOR = "vendor"
     EQUIPMENT = "equipment"
     MATERIAL = "material"
 
