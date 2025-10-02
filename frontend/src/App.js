@@ -295,14 +295,14 @@ const ProjectForm = ({ onProjectCreated, onClose }) => {
 };
 
 // Resource Form Component
-const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
+const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource = null }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'team_member',
-    cost_per_unit: '',
-    availability: '',
-    allocated_amount: '',
-    description: ''
+    name: editingResource?.name || '',
+    type: editingResource?.type || 'team_member',
+    cost_per_unit: editingResource?.cost_per_unit || '',
+    availability: editingResource?.availability || '',
+    allocated_amount: editingResource?.allocated_amount || '',
+    description: editingResource?.description || ''
   });
   const [loading, setLoading] = useState(false);
 
