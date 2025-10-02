@@ -56,6 +56,7 @@ class DocumentStatus(str, Enum):
 
 class ExpenseType(str, Enum):
     RESOURCE = "resource"
+    VENDOR = "vendor"
     EQUIPMENT = "equipment"
     MATERIAL = "material"
     OTHER = "other"
