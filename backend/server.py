@@ -408,6 +408,10 @@ async def complete_milestone(milestone_id: str):
     return {"message": "Milestone completed"}
 
 # Expenses
+class ExpenseWithResource(BaseModel):
+    expense: ExpenseCreate
+    resource: ResourceCreate
+
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(expense: ExpenseCreate):
     expense_dict = expense.dict()
@@ -417,6 +421,34 @@ async def create_expense(expense: ExpenseCreate):
     expense_data = prepare_for_mongo(expense_obj.dict())
     await db.expenses.insert_one(expense_data)
     return expense_obj
+
+@api_router.post("/expenses/with-resource")
+async def create_expense_with_resource(data: ExpenseWithResource):
+    """Create an expense and link it to a new resource"""
+    
+    # First create the resource
+    resource_dict = data.resource.dict()
+    resource_obj = Resource(**resource_dict)
+    resource_data = prepare_for_mongo(resource_obj.dict())
+    await db.resources.insert_one(resource_data)
+    
+    # Then create the expense linked to the resource
+    expense_dict = data.expense.dict()
+    if expense_dict.get('date') is None:
+        expense_dict['date'] = datetime.now(timezone.utc)
+    
+    # Link the expense to the resource
+    expense_dict['resource_id'] = resource_obj.id
+    
+    expense_obj = Expense(**expense_dict)
+    expense_data = prepare_for_mongo(expense_obj.dict())
+    await db.expenses.insert_one(expense_data)
+    
+    return {
+        "expense": expense_obj,
+        "resource": resource_obj,
+        "message": "Expense and resource created successfully"
+    }
 
 @api_router.get("/projects/{project_id}/expenses", response_model=List[Expense])
 async def get_project_expenses(project_id: str):
