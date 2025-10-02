@@ -438,7 +438,7 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource =
           Cancel
         </Button>
         <Button type="submit" disabled={loading} data-testid="add-resource-submit">
-          {loading ? 'Adding...' : 'Add Resource'}
+          {loading ? (editingResource ? 'Updating...' : 'Adding...') : (editingResource ? 'Update Resource' : 'Add Resource')}
         </Button>
       </div>
     </form>
