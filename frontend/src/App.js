@@ -363,9 +363,33 @@ const ProjectDetail = ({ project, onBack }) => {
           <h1 className="text-3xl font-bold">{project.name}</h1>
           <p className="text-gray-600">{project.description}</p>
         </div>
-        <Badge className={getStageColor(project.stage) + ' text-lg px-4 py-2'}>
-          {project.stage.charAt(0).toUpperCase() + project.stage.slice(1)}
-        </Badge>
+        <div className="flex flex-col items-end space-y-2">
+          <Label className="text-sm text-gray-600">Project Stage (Project Manager Only)</Label>
+          <Select 
+            value={project.stage} 
+            onValueChange={updateProjectStage}
+            data-testid="project-stage-selector"
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue>
+                <Badge className={getStageColor(project.stage)}>
+                  {project.stage.charAt(0).toUpperCase() + project.stage.slice(1)}
+                </Badge>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {PROJECT_STAGES.map((stage) => (
+                <SelectItem key={stage.value} value={stage.value} data-testid={`stage-${stage.value}`}>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={getStageColor(stage.value) + ' text-xs'}>
+                      {stage.label}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Project Overview Cards */}
