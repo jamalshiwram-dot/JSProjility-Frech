@@ -296,6 +296,129 @@ const ProjectForm = ({ onProjectCreated, onClose }) => {
   );
 };
 
+// Expense Form Component
+const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = null }) => {
+  const [formData, setFormData] = useState({
+    description: editingExpense?.description || '',
+    amount: editingExpense?.amount || '',
+    expense_type: editingExpense?.expense_type || 'other',
+    date: editingExpense?.date ? new Date(editingExpense.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+  });
+  const [loading, setLoading] = useState(false);
+
+  const expenseTypes = [
+    { value: 'resource', label: 'Resource' },
+    { value: 'vendor', label: 'Vendor' },
+    { value: 'equipment', label: 'Equipment' },
+    { value: 'material', label: 'Material' },
+    { value: 'other', label: 'Other' }
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const expenseData = {
+        ...formData,
+        amount: parseFloat(formData.amount),
+        date: new Date(formData.date).toISOString()
+      };
+      
+      if (editingExpense) {
+        // Update existing expense
+        const response = await axios.put(`${API}/expenses/${editingExpense.id}`, expenseData);
+        toast.success('Expense updated successfully!');
+        onExpenseCreated(response.data);
+      } else {
+        // Create new expense
+        expenseData.project_id = projectId;
+        const response = await axios.post(`${API}/expenses`, expenseData);
+        toast.success('Expense added successfully!');
+        onExpenseCreated(response.data);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      toast.error(editingExpense ? 'Failed to update expense' : 'Failed to add expense');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="expense-description">Description</Label>
+        <Input
+          id="expense-description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          required
+          data-testid="expense-description-input"
+          placeholder="e.g., Office supplies, consultant fee"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="expense-type">Expense Type</Label>
+        <Select 
+          value={formData.expense_type} 
+          onValueChange={(value) => setFormData({ ...formData, expense_type: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {expenseTypes.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="expense-amount">Amount ($)</Label>
+          <Input
+            id="expense-amount"
+            type="number"
+            step="0.01"
+            value={formData.amount}
+            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+            required
+            data-testid="expense-amount-input"
+            placeholder="0.00"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="expense-date">Date</Label>
+          <Input
+            id="expense-date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            required
+            data-testid="expense-date-input"
+          />
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading} data-testid="add-expense-submit">
+          {loading ? (editingExpense ? 'Updating...' : 'Adding...') : (editingExpense ? 'Update Expense' : 'Add Expense')}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 // Resource Form Component
 const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource = null }) => {
   const [formData, setFormData] = useState({
