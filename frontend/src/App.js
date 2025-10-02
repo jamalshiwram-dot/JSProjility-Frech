@@ -294,6 +294,148 @@ const ProjectForm = ({ onProjectCreated, onClose }) => {
   );
 };
 
+// Resource Form Component
+const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'team_member',
+    cost_per_unit: '',
+    availability: '',
+    allocated_amount: '',
+    description: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const resourceTypes = [
+    { value: 'team_member', label: 'Team Member' },
+    { value: 'vendor', label: 'Vendor' },
+    { value: 'equipment', label: 'Equipment' },
+    { value: 'material', label: 'Material' }
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const resourceData = {
+        ...formData,
+        project_id: projectId,
+        cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : null,
+        allocated_amount: formData.allocated_amount ? parseFloat(formData.allocated_amount) : 0.0
+      };
+      
+      const response = await axios.post(`${API}/resources`, resourceData);
+      toast.success('Resource added successfully!');
+      onResourceCreated(response.data);
+      onClose();
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      toast.error('Failed to add resource');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showCostField = formData.type === 'equipment' || formData.type === 'material';
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="resource-name">Resource Name</Label>
+        <Input
+          id="resource-name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+          data-testid="resource-name-input"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="resource-type">Resource Type</Label>
+        <Select 
+          value={formData.type} 
+          onValueChange={(value) => setFormData({ ...formData, type: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {resourceTypes.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="availability">Availability</Label>
+        <Input
+          id="availability"
+          value={formData.availability}
+          onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
+          placeholder="e.g., Full-time, Part-time, 40 hours/week"
+          required
+        />
+      </div>
+
+      {showCostField && (
+        <>
+          <div>
+            <Label htmlFor="cost">Cost (Optional)</Label>
+            <Input
+              id="cost"
+              type="number"
+              step="0.01"
+              value={formData.cost_per_unit}
+              onChange={(e) => setFormData({ ...formData, cost_per_unit: e.target.value })}
+              placeholder="Enter cost if applicable"
+              data-testid="resource-cost-input"
+            />
+            <p className="text-sm text-gray-600 mt-1">
+              If you enter a cost, it will be automatically added to project expenses
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="allocated-amount">Quantity/Amount</Label>
+            <Input
+              id="allocated-amount"
+              type="number"
+              step="0.01"
+              value={formData.allocated_amount}
+              onChange={(e) => setFormData({ ...formData, allocated_amount: e.target.value })}
+              placeholder="e.g., 1, 5, 10"
+            />
+          </div>
+        </>
+      )}
+
+      <div>
+        <Label htmlFor="description">Description (Optional)</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Additional details about this resource"
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading} data-testid="add-resource-submit">
+          {loading ? 'Adding...' : 'Add Resource'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 // Project Detail Component
 const ProjectDetail = ({ project, onBack }) => {
   const [resources, setResources] = useState([]);
@@ -302,6 +444,7 @@ const ProjectDetail = ({ project, onBack }) => {
   const [budgetSummary, setBudgetSummary] = useState({});
   const [documents, setDocuments] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showAddResource, setShowAddResource] = useState(false);
 
   useEffect(() => {
     if (project) {
