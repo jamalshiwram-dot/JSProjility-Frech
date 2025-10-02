@@ -677,6 +677,47 @@ const ProjectDetail = ({ project, onBack }) => {
     setEditingResource(null);
   };
 
+  const handleExpenseCreated = (newExpense) => {
+    if (editingExpense) {
+      // Update existing expense in list
+      setExpenses(expenses.map(e => e.id === newExpense.id ? newExpense : e));
+      setEditingExpense(null);
+    } else {
+      // Add new expense to list
+      setExpenses([...expenses, newExpense]);
+    }
+    setShowAddExpense(false);
+    // Refresh project data to update budget summary and resources
+    fetchProjectData();
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setShowAddExpense(true);
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    if (!window.confirm('Are you sure you want to delete this expense? If it\'s linked to a resource, the resource cost will be cleared.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/expenses/${expenseId}`);
+      toast.success('Expense deleted successfully!');
+      setExpenses(expenses.filter(e => e.id !== expenseId));
+      // Refresh project data to update budget summary and resources
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast.error('Failed to delete expense');
+    }
+  };
+
+  const handleCloseExpenseForm = () => {
+    setShowAddExpense(false);
+    setEditingExpense(null);
+  };
+
   if (!project) return null;
 
   return (
