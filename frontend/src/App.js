@@ -348,6 +348,14 @@ const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = nu
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {editingExpense && editingExpense.resource_id && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-sm text-blue-800">
+            <strong>🔗 Linked to Resource:</strong> Changes here will automatically update the associated resource in the Resources tab.
+          </p>
+        </div>
+      )}
+      
       <div>
         <Label htmlFor="expense-description">Description</Label>
         <Input
@@ -358,6 +366,11 @@ const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = nu
           data-testid="expense-description-input"
           placeholder="e.g., Office supplies, consultant fee"
         />
+        {editingExpense && editingExpense.resource_id && (
+          <p className="text-xs text-gray-600 mt-1">
+            The resource name will be updated to match this description
+          </p>
+        )}
       </div>
       
       <div>
