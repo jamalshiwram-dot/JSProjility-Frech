@@ -435,12 +435,10 @@ const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = nu
       {!editingExpense && (formData.expense_type === 'vendor' || formData.expense_type === 'equipment' || formData.expense_type === 'material') && (
         <div className="border rounded-lg p-4 bg-blue-50">
           <div className="flex items-center space-x-2 mb-3">
-            <input
-              type="checkbox"
+            <Checkbox
               id="link-to-resource"
               checked={linkToResource}
-              onChange={(e) => setLinkToResource(e.target.checked)}
-              className="rounded border-gray-300"
+              onCheckedChange={setLinkToResource}
             />
             <Label htmlFor="link-to-resource" className="font-medium text-blue-900">
               🔗 Link to Resources Tab?
