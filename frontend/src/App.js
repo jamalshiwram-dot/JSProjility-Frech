@@ -152,7 +152,7 @@ const Dashboard = ({ projects, onProjectSelect }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {projects.slice(0, 5).map((project) => (
+            {projects && projects.length > 0 ? projects.slice(0, 5).map((project) => (
               <div 
                 key={project.id} 
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
