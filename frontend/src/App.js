@@ -1144,7 +1144,7 @@ const ProjectDetail = ({ project, onBack }) => {
                             </Badge>
                             {expense.resource_id && (
                               <Badge className="bg-blue-50 text-blue-700 text-xs">
-                                Linked to Resource
+                                🔗 Linked to Resource
                               </Badge>
                             )}
                           </div>
