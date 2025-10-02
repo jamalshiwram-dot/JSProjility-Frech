@@ -764,15 +764,16 @@ const ProjectDetail = ({ project, onBack }) => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Resource</DialogTitle>
+                    <DialogTitle>{editingResource ? 'Edit Resource' : 'Add New Resource'}</DialogTitle>
                     <DialogDescription>
-                      Add team members, vendors, equipment, or materials to your project.
+                      {editingResource ? 'Update resource information and costs.' : 'Add team members, vendors, equipment, or materials to your project.'}
                     </DialogDescription>
                   </DialogHeader>
                   <ResourceForm 
                     projectId={project.id}
                     onResourceCreated={handleResourceCreated}
-                    onClose={() => setShowAddResource(false)}
+                    onClose={handleCloseResourceForm}
+                    editingResource={editingResource}
                   />
                 </DialogContent>
               </Dialog>
