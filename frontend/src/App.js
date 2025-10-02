@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,7 +32,9 @@ import {
   AlertTriangleIcon,
   FileTextIcon,
   BarChart3Icon,
-  TargetIcon
+  TargetIcon,
+  EditIcon,
+  TrashIcon
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://pmcentral-1.preview.emergentagent.com';
@@ -294,15 +297,247 @@ const ProjectForm = ({ onProjectCreated, onClose }) => {
   );
 };
 
-// Resource Form Component
-const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
+// Expense Form Component
+const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = null }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'team_member',
-    cost_per_unit: '',
+    description: editingExpense?.description || '',
+    amount: editingExpense?.amount || '',
+    expense_type: editingExpense?.expense_type || 'other',
+    date: editingExpense?.date ? new Date(editingExpense.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+  });
+  const [linkToResource, setLinkToResource] = useState(false);
+  const [resourceData, setResourceData] = useState({
     availability: '',
-    allocated_amount: '',
+    allocated_amount: '1',
     description: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const expenseTypes = [
+    { value: 'resource', label: 'Resource' },
+    { value: 'vendor', label: 'Vendor' },
+    { value: 'equipment', label: 'Equipment' },
+    { value: 'material', label: 'Material' },
+    { value: 'other', label: 'Other' }
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      if (editingExpense) {
+        // Update existing expense
+        const expenseData = {
+          ...formData,
+          amount: parseFloat(formData.amount),
+          date: new Date(formData.date).toISOString()
+        };
+        
+        const response = await axios.put(`${API}/expenses/${editingExpense.id}`, expenseData);
+        toast.success('Expense updated successfully!');
+        onExpenseCreated(response.data);
+      } else {
+        // Create new expense
+        if (linkToResource && (formData.expense_type === 'vendor' || formData.expense_type === 'equipment' || formData.expense_type === 'material')) {
+          // Create expense with linked resource
+          const expenseWithResourceData = {
+            expense: {
+              ...formData,
+              amount: parseFloat(formData.amount),
+              date: new Date(formData.date).toISOString(),
+              project_id: projectId
+            },
+            resource: {
+              name: formData.description.includes(':') ? formData.description.split(': ')[1] : formData.description,
+              type: formData.expense_type === 'vendor' ? 'vendor' : formData.expense_type,
+              cost_per_unit: parseFloat(formData.amount) / parseFloat(resourceData.allocated_amount || 1),
+              availability: resourceData.availability,
+              allocated_amount: parseFloat(resourceData.allocated_amount || 1),
+              description: resourceData.description,
+              project_id: projectId
+            }
+          };
+          
+          const response = await axios.post(`${API}/expenses/with-resource`, expenseWithResourceData);
+          toast.success('Expense and resource created successfully!');
+          onExpenseCreated(response.data.expense);
+        } else {
+          // Create regular expense
+          const expenseData = {
+            ...formData,
+            amount: parseFloat(formData.amount),
+            date: new Date(formData.date).toISOString(),
+            project_id: projectId
+          };
+          
+          const response = await axios.post(`${API}/expenses`, expenseData);
+          toast.success('Expense added successfully!');
+          onExpenseCreated(response.data);
+        }
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving expense:', error);
+      toast.error(editingExpense ? 'Failed to update expense' : 'Failed to add expense');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {editingExpense && editingExpense.resource_id && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-sm text-blue-800">
+            <strong>🔗 Linked to Resource:</strong> Changes here will automatically update the associated resource in the Resources tab.
+          </p>
+        </div>
+      )}
+      
+      <div>
+        <Label htmlFor="expense-description">Description</Label>
+        <Input
+          id="expense-description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          required
+          data-testid="expense-description-input"
+          placeholder="e.g., Office supplies, consultant fee"
+        />
+        {editingExpense && editingExpense.resource_id && (
+          <p className="text-xs text-gray-600 mt-1">
+            The resource name will be updated to match this description
+          </p>
+        )}
+      </div>
+      
+      <div>
+        <Label htmlFor="expense-type">Expense Type</Label>
+        <Select 
+          value={formData.expense_type} 
+          onValueChange={(value) => setFormData({ ...formData, expense_type: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {expenseTypes.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Link to Resource Option */}
+      {!editingExpense && (formData.expense_type === 'vendor' || formData.expense_type === 'equipment' || formData.expense_type === 'material') && (
+        <div className="border rounded-lg p-4 bg-blue-50">
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox
+              id="link-to-resource"
+              checked={linkToResource}
+              onCheckedChange={setLinkToResource}
+            />
+            <Label htmlFor="link-to-resource" className="font-medium text-blue-900">
+              🔗 Link to Resources Tab?
+            </Label>
+          </div>
+          <p className="text-sm text-blue-800 mb-3">
+            Create a corresponding resource in the Resources tab that will stay synchronized with this expense.
+          </p>
+          
+          {linkToResource && (
+            <div className="space-y-3 border-t border-blue-200 pt-3">
+              <div>
+                <Label htmlFor="resource-availability">Resource Availability</Label>
+                <Input
+                  id="resource-availability"
+                  value={resourceData.availability}
+                  onChange={(e) => setResourceData({ ...resourceData, availability: e.target.value })}
+                  placeholder="e.g., Full-time, Available, On-demand"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="resource-quantity">Quantity/Amount</Label>
+                <Input
+                  id="resource-quantity"
+                  type="number"
+                  step="0.01"
+                  value={resourceData.allocated_amount}
+                  onChange={(e) => setResourceData({ ...resourceData, allocated_amount: e.target.value })}
+                  placeholder="1"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="resource-description">Resource Description (Optional)</Label>
+                <Textarea
+                  id="resource-description"
+                  value={resourceData.description}
+                  onChange={(e) => setResourceData({ ...resourceData, description: e.target.value })}
+                  placeholder="Additional details about this resource"
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="expense-amount">Amount ($)</Label>
+          <Input
+            id="expense-amount"
+            type="number"
+            step="0.01"
+            value={formData.amount}
+            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+            required
+            data-testid="expense-amount-input"
+            placeholder="0.00"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="expense-date">Date</Label>
+          <Input
+            id="expense-date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            required
+            data-testid="expense-date-input"
+          />
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading} data-testid="add-expense-submit">
+          {loading ? (editingExpense ? 'Updating...' : 'Adding...') : (editingExpense ? 'Update Expense' : 'Add Expense')}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+// Resource Form Component
+const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource = null }) => {
+  const [formData, setFormData] = useState({
+    name: editingResource?.name || '',
+    type: editingResource?.type || 'team_member',
+    cost_per_unit: editingResource?.cost_per_unit || '',
+    availability: editingResource?.availability || '',
+    allocated_amount: editingResource?.allocated_amount || '',
+    description: editingResource?.description || ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -320,18 +555,27 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
     try {
       const resourceData = {
         ...formData,
-        project_id: projectId,
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : null,
         allocated_amount: formData.allocated_amount ? parseFloat(formData.allocated_amount) : 0.0
       };
       
-      const response = await axios.post(`${API}/resources`, resourceData);
-      toast.success('Resource added successfully!');
-      onResourceCreated(response.data);
+      if (editingResource) {
+        // Update existing resource
+        if (!projectId) resourceData.project_id = projectId;
+        const response = await axios.put(`${API}/resources/${editingResource.id}`, resourceData);
+        toast.success('Resource updated successfully!');
+        onResourceCreated(response.data);
+      } else {
+        // Create new resource
+        resourceData.project_id = projectId;
+        const response = await axios.post(`${API}/resources`, resourceData);
+        toast.success('Resource added successfully!');
+        onResourceCreated(response.data);
+      }
       onClose();
     } catch (error) {
-      console.error('Error creating resource:', error);
-      toast.error('Failed to add resource');
+      console.error('Error saving resource:', error);
+      toast.error(editingResource ? 'Failed to update resource' : 'Failed to add resource');
     } finally {
       setLoading(false);
     }
@@ -429,7 +673,7 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
           Cancel
         </Button>
         <Button type="submit" disabled={loading} data-testid="add-resource-submit">
-          {loading ? 'Adding...' : 'Add Resource'}
+          {loading ? (editingResource ? 'Updating...' : 'Adding...') : (editingResource ? 'Update Resource' : 'Add Resource')}
         </Button>
       </div>
     </form>
@@ -445,6 +689,9 @@ const ProjectDetail = ({ project, onBack }) => {
   const [documents, setDocuments] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddResource, setShowAddResource] = useState(false);
+  const [editingResource, setEditingResource] = useState(null);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   useEffect(() => {
     if (project) {
@@ -500,10 +747,108 @@ const ProjectDetail = ({ project, onBack }) => {
   };
 
   const handleResourceCreated = (newResource) => {
-    setResources([...resources, newResource]);
+    if (editingResource) {
+      // Update existing resource in list
+      setResources(resources.map(r => r.id === newResource.id ? newResource : r));
+      setEditingResource(null);
+    } else {
+      // Add new resource to list
+      setResources([...resources, newResource]);
+    }
     setShowAddResource(false);
     // Refresh project data to update budget summary if expense was created
     fetchProjectData();
+  };
+
+  const handleEditResource = (resource) => {
+    setEditingResource(resource);
+    setShowAddResource(true);
+  };
+
+  const handleDeleteResource = async (resourceId) => {
+    if (!window.confirm('Are you sure you want to delete this resource? This will also remove any associated expenses.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/resources/${resourceId}`);
+      toast.success('Resource deleted successfully!');
+      setResources(resources.filter(r => r.id !== resourceId));
+      // Refresh project data to update budget summary
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error deleting resource:', error);
+      toast.error('Failed to delete resource');
+    }
+  };
+
+  const handleCloseResourceForm = () => {
+    setShowAddResource(false);
+    setEditingResource(null);
+  };
+
+  const handleExpenseCreated = (newExpense) => {
+    if (editingExpense) {
+      // Update existing expense in list
+      setExpenses(expenses.map(e => e.id === newExpense.id ? newExpense : e));
+      setEditingExpense(null);
+      
+      // If this expense is linked to a resource, show specific message
+      if (newExpense.resource_id) {
+        toast.success('Expense updated successfully! Associated resource has been updated too.');
+      }
+    } else {
+      // Add new expense to list
+      setExpenses([...expenses, newExpense]);
+    }
+    setShowAddExpense(false);
+    // Refresh project data to update budget summary and resources (especially important for linked expenses)
+    fetchProjectData();
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setShowAddExpense(true);
+  };
+
+  const handleDeleteExpense = async (expenseId) => {
+    const expense = expenses.find(e => e.id === expenseId);
+    const isLinkedToResource = expense?.resource_id;
+    
+    const confirmMessage = isLinkedToResource 
+      ? 'Are you sure you want to delete this expense? This will also delete the associated resource from the Resources tab.'
+      : 'Are you sure you want to delete this expense?';
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/expenses/${expenseId}`);
+      
+      if (isLinkedToResource) {
+        toast.success('Expense and associated resource deleted successfully!');
+        // Remove the associated resource from the resources list
+        setResources(resources.filter(r => r.id !== expense.resource_id));
+        // Remove all expenses associated with this resource
+        setExpenses(expenses.filter(e => e.resource_id !== expense.resource_id));
+      } else {
+        toast.success('Expense deleted successfully!');
+        // Just remove this expense
+        setExpenses(expenses.filter(e => e.id !== expenseId));
+      }
+      
+      // Refresh project data to update budget summary
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast.error('Failed to delete expense');
+    }
+  };
+
+  const handleCloseExpenseForm = () => {
+    setShowAddExpense(false);
+    setEditingExpense(null);
   };
 
   if (!project) return null;
@@ -720,15 +1065,16 @@ const ProjectDetail = ({ project, onBack }) => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Resource</DialogTitle>
+                    <DialogTitle>{editingResource ? 'Edit Resource' : 'Add New Resource'}</DialogTitle>
                     <DialogDescription>
-                      Add team members, vendors, equipment, or materials to your project.
+                      {editingResource ? 'Update resource information and costs.' : 'Add team members, vendors, equipment, or materials to your project.'}
                     </DialogDescription>
                   </DialogHeader>
                   <ResourceForm 
                     projectId={project.id}
                     onResourceCreated={handleResourceCreated}
-                    onClose={() => setShowAddResource(false)}
+                    onClose={handleCloseResourceForm}
+                    editingResource={editingResource}
                   />
                 </DialogContent>
               </Dialog>
@@ -760,18 +1106,39 @@ const ProjectDetail = ({ project, onBack }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {resource.cost_per_unit && (
-                        <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
-                      )}
-                      {resource.allocated_amount > 0 && (
-                        <div className="text-sm text-gray-600">Quantity: {resource.allocated_amount}</div>
-                      )}
-                      {resource.cost_per_unit && resource.allocated_amount > 0 && (
-                        <div className="text-sm font-medium text-green-600">
-                          Total: {formatCurrency(resource.cost_per_unit * resource.allocated_amount)}
-                        </div>
-                      )}
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        {resource.cost_per_unit && (
+                          <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
+                        )}
+                        {resource.allocated_amount > 0 && (
+                          <div className="text-sm text-gray-600">Quantity: {resource.allocated_amount}</div>
+                        )}
+                        {resource.cost_per_unit && resource.allocated_amount > 0 && (
+                          <div className="text-sm font-medium text-green-600">
+                            Total: {formatCurrency(resource.cost_per_unit * resource.allocated_amount)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEditResource(resource)}
+                          data-testid={`edit-resource-${resource.id}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleDeleteResource(resource.id)}
+                          className="text-red-600 hover:text-red-800 hover:border-red-300"
+                          data-testid={`delete-resource-${resource.id}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )) : (
@@ -842,26 +1209,101 @@ const ProjectDetail = ({ project, onBack }) => {
         
         <TabsContent value="expenses">
           <Card>
-            <CardHeader>
-              <CardTitle>Project Expenses</CardTitle>
-              <CardDescription>Track all project-related expenses</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Project Expenses</CardTitle>
+                <CardDescription>Track and manage all project-related expenses</CardDescription>
+              </div>
+              <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
+                <DialogTrigger asChild>
+                  <Button data-testid="add-expense-button">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Expense
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                    <DialogDescription>
+                      {editingExpense ? 'Update expense information and amount.' : 'Record a new expense for this project.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ExpenseForm 
+                    projectId={project.id}
+                    onExpenseCreated={handleExpenseCreated}
+                    onClose={handleCloseExpenseForm}
+                    editingExpense={editingExpense}
+                  />
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {expenses.map((expense) => (
-                  <div key={expense.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">{expense.description}</h4>
-                      <p className="text-sm text-gray-600">Type: {expense.expense_type.replace('_', ' ')}</p>
-                      <p className="text-sm text-gray-600">Date: {formatDate(expense.date)}</p>
+                {expenses && expenses.length > 0 ? expenses.map((expense) => (
+                  <div key={expense.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <h4 className="font-medium">{expense.description}</h4>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge 
+                              className={
+                                expense.expense_type === 'vendor' ? 'bg-purple-100 text-purple-800' :
+                                expense.expense_type === 'equipment' ? 'bg-green-100 text-green-800' :
+                                expense.expense_type === 'material' ? 'bg-orange-100 text-orange-800' :
+                                expense.expense_type === 'resource' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                              }
+                            >
+                              {expense.expense_type.replace('_', ' ')}
+                            </Badge>
+                            {expense.resource_id && (
+                              <Badge className="bg-blue-50 text-blue-700 text-xs">
+                                🔗 Linked to Resource
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">Date: {formatDate(expense.date)}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-lg">{formatCurrency(expense.amount)}</div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <div className="font-semibold text-lg">{formatCurrency(expense.amount)}</div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEditExpense(expense)}
+                          data-testid={`edit-expense-${expense.id}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          className="text-red-600 hover:text-red-800 hover:border-red-300"
+                          data-testid={`delete-expense-${expense.id}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                ))}
-                {expenses.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">No expenses recorded for this project</p>
+                )) : (
+                  <div className="text-center py-8">
+                    <DollarSignIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No expenses recorded for this project</p>
+                    <Button 
+                      onClick={() => setShowAddExpense(true)}
+                      data-testid="add-first-expense-button"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Add Your First Expense
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
