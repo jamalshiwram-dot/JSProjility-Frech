@@ -325,23 +325,55 @@ const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = nu
     setLoading(true);
     
     try {
-      const expenseData = {
-        ...formData,
-        amount: parseFloat(formData.amount),
-        date: new Date(formData.date).toISOString()
-      };
-      
       if (editingExpense) {
         // Update existing expense
+        const expenseData = {
+          ...formData,
+          amount: parseFloat(formData.amount),
+          date: new Date(formData.date).toISOString()
+        };
+        
         const response = await axios.put(`${API}/expenses/${editingExpense.id}`, expenseData);
         toast.success('Expense updated successfully!');
         onExpenseCreated(response.data);
       } else {
         // Create new expense
-        expenseData.project_id = projectId;
-        const response = await axios.post(`${API}/expenses`, expenseData);
-        toast.success('Expense added successfully!');
-        onExpenseCreated(response.data);
+        if (linkToResource && (formData.expense_type === 'vendor' || formData.expense_type === 'equipment' || formData.expense_type === 'material')) {
+          // Create expense with linked resource
+          const expenseWithResourceData = {
+            expense: {
+              ...formData,
+              amount: parseFloat(formData.amount),
+              date: new Date(formData.date).toISOString(),
+              project_id: projectId
+            },
+            resource: {
+              name: formData.description.includes(':') ? formData.description.split(': ')[1] : formData.description,
+              type: formData.expense_type === 'vendor' ? 'vendor' : formData.expense_type,
+              cost_per_unit: parseFloat(formData.amount) / parseFloat(resourceData.allocated_amount || 1),
+              availability: resourceData.availability,
+              allocated_amount: parseFloat(resourceData.allocated_amount || 1),
+              description: resourceData.description,
+              project_id: projectId
+            }
+          };
+          
+          const response = await axios.post(`${API}/expenses/with-resource`, expenseWithResourceData);
+          toast.success('Expense and resource created successfully!');
+          onExpenseCreated(response.data.expense);
+        } else {
+          // Create regular expense
+          const expenseData = {
+            ...formData,
+            amount: parseFloat(formData.amount),
+            date: new Date(formData.date).toISOString(),
+            project_id: projectId
+          };
+          
+          const response = await axios.post(`${API}/expenses`, expenseData);
+          toast.success('Expense added successfully!');
+          onExpenseCreated(response.data);
+        }
       }
       onClose();
     } catch (error) {
