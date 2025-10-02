@@ -499,6 +499,13 @@ const ProjectDetail = ({ project, onBack }) => {
     }
   };
 
+  const handleResourceCreated = (newResource) => {
+    setResources([...resources, newResource]);
+    setShowAddResource(false);
+    // Refresh project data to update budget summary if expense was created
+    fetchProjectData();
+  };
+
   if (!project) return null;
 
   return (
