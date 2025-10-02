@@ -580,6 +580,8 @@ const ProjectDetail = ({ project, onBack }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddResource, setShowAddResource] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   useEffect(() => {
     if (project) {
