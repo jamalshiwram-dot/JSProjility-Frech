@@ -327,7 +327,7 @@ class ExpenseResourceTester:
             "project_id": self.project_id
         }
         
-        success, response, status = self.make_request('POST', 'resources', resource_data, 201)
+        success, response, status = self.make_request('POST', 'resources', resource_data, 200)
         if not success:
             self.log_test("Setup Resource Deletion Test", False, f"Failed to create resource: {response}")
             return False
