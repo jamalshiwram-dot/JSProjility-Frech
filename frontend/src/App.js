@@ -320,18 +320,27 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource =
     try {
       const resourceData = {
         ...formData,
-        project_id: projectId,
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : null,
         allocated_amount: formData.allocated_amount ? parseFloat(formData.allocated_amount) : 0.0
       };
       
-      const response = await axios.post(`${API}/resources`, resourceData);
-      toast.success('Resource added successfully!');
-      onResourceCreated(response.data);
+      if (editingResource) {
+        // Update existing resource
+        if (!projectId) resourceData.project_id = projectId;
+        const response = await axios.put(`${API}/resources/${editingResource.id}`, resourceData);
+        toast.success('Resource updated successfully!');
+        onResourceCreated(response.data);
+      } else {
+        // Create new resource
+        resourceData.project_id = projectId;
+        const response = await axios.post(`${API}/resources`, resourceData);
+        toast.success('Resource added successfully!');
+        onResourceCreated(response.data);
+      }
       onClose();
     } catch (error) {
-      console.error('Error creating resource:', error);
-      toast.error('Failed to add resource');
+      console.error('Error saving resource:', error);
+      toast.error(editingResource ? 'Failed to update resource' : 'Failed to add resource');
     } finally {
       setLoading(false);
     }
