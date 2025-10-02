@@ -337,7 +337,7 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
     }
   };
 
-  const showCostField = formData.type === 'equipment' || formData.type === 'material';
+  const showCostField = formData.type === 'vendor' || formData.type === 'equipment' || formData.type === 'material';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
