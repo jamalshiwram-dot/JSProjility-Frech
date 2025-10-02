@@ -298,6 +298,84 @@ async def get_project_resources(project_id: str):
     resources = await db.resources.find({"project_id": project_id}).to_list(1000)
     return [Resource(**parse_from_mongo(resource)) for resource in resources]
 
+@api_router.get("/resources/{resource_id}", response_model=Resource)
+async def get_resource(resource_id: str):
+    resource = await db.resources.find_one({"id": resource_id})
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    return Resource(**parse_from_mongo(resource))
+
+@api_router.put("/resources/{resource_id}", response_model=Resource)
+async def update_resource(resource_id: str, resource_update: ResourceUpdate):
+    # Get existing resource
+    existing_resource = await db.resources.find_one({"id": resource_id})
+    if not existing_resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    # Prepare update data
+    update_data = {k: v for k, v in resource_update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    # Update resource
+    prepared_data = prepare_for_mongo(update_data)
+    result = await db.resources.update_one(
+        {"id": resource_id}, 
+        {"$set": prepared_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    # Get updated resource
+    updated_resource = await db.resources.find_one({"id": resource_id})
+    updated_resource_obj = Resource(**parse_from_mongo(updated_resource))
+    
+    # Handle expense updates for cost changes
+    if ("cost_per_unit" in update_data and 
+        updated_resource_obj.type in [ResourceType.VENDOR, ResourceType.EQUIPMENT, ResourceType.MATERIAL]):
+        
+        # Delete existing expense for this resource
+        await db.expenses.delete_many({"resource_id": resource_id})
+        
+        # Create new expense if cost is provided
+        if updated_resource_obj.cost_per_unit is not None and updated_resource_obj.cost_per_unit > 0:
+            expense_type_mapping = {
+                ResourceType.VENDOR: ExpenseType.VENDOR,
+                ResourceType.EQUIPMENT: ExpenseType.EQUIPMENT,
+                ResourceType.MATERIAL: ExpenseType.MATERIAL
+            }
+            
+            expense_type = expense_type_mapping[updated_resource_obj.type]
+            expense = Expense(
+                description=f"{updated_resource_obj.type.value.replace('_', ' ').title()}: {updated_resource_obj.name}",
+                amount=updated_resource_obj.cost_per_unit * updated_resource_obj.allocated_amount if updated_resource_obj.allocated_amount > 0 else updated_resource_obj.cost_per_unit,
+                expense_type=expense_type,
+                project_id=updated_resource_obj.project_id,
+                resource_id=updated_resource_obj.id
+            )
+            expense_data = prepare_for_mongo(expense.dict())
+            await db.expenses.insert_one(expense_data)
+    
+    return updated_resource_obj
+
+@api_router.delete("/resources/{resource_id}")
+async def delete_resource(resource_id: str):
+    # Check if resource exists
+    resource = await db.resources.find_one({"id": resource_id})
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    # Delete associated expenses
+    await db.expenses.delete_many({"resource_id": resource_id})
+    
+    # Delete resource
+    result = await db.resources.delete_one({"id": resource_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    return {"message": "Resource deleted successfully"}
+
 # Milestones
 @api_router.post("/milestones", response_model=Milestone)
 async def create_milestone(milestone: MilestoneCreate):
