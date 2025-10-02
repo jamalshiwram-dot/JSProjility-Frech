@@ -34,7 +34,7 @@ import {
   TargetIcon
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://pmcentral-1.preview.emergentagent.com';
 const API = `${BACKEND_URL}/api`;
 
 // Helper function to format currency
