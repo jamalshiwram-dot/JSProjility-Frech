@@ -163,6 +163,13 @@ class ExpenseCreate(BaseModel):
     resource_id: Optional[str] = None
     date: Optional[datetime] = None
 
+class ExpenseUpdate(BaseModel):
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    expense_type: Optional[ExpenseType] = None
+    resource_id: Optional[str] = None
+    date: Optional[datetime] = None
+
 class Document(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
