@@ -718,9 +718,11 @@ function App() {
   const fetchProjects = async () => {
     try {
       const response = await axios.get(`${API}/projects`);
-      setProjects(response.data);
+      setProjects(response.data || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      console.error('API URL:', API);
+      setProjects([]); // Set to empty array on error
       toast.error('Failed to load projects');
     } finally {
       setLoading(false);
