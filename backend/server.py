@@ -260,12 +260,19 @@ async def create_resource(resource: ResourceCreate):
     resource_data = prepare_for_mongo(resource_obj.dict())
     await db.resources.insert_one(resource_data)
     
-    # Auto-create expense for Equipment and Materials with costs
-    if (resource_obj.type in [ResourceType.EQUIPMENT, ResourceType.MATERIAL] 
+    # Auto-create expense for Vendors, Equipment and Materials with costs
+    if (resource_obj.type in [ResourceType.VENDOR, ResourceType.EQUIPMENT, ResourceType.MATERIAL] 
         and resource_obj.cost_per_unit is not None 
         and resource_obj.cost_per_unit > 0):
         
-        expense_type = ExpenseType.EQUIPMENT if resource_obj.type == ResourceType.EQUIPMENT else ExpenseType.MATERIAL
+        # Map resource type to expense type
+        expense_type_mapping = {
+            ResourceType.VENDOR: ExpenseType.VENDOR,
+            ResourceType.EQUIPMENT: ExpenseType.EQUIPMENT,
+            ResourceType.MATERIAL: ExpenseType.MATERIAL
+        }
+        
+        expense_type = expense_type_mapping[resource_obj.type]
         expense = Expense(
             description=f"{resource_obj.type.value.replace('_', ' ').title()}: {resource_obj.name}",
             amount=resource_obj.cost_per_unit * resource_obj.allocated_amount if resource_obj.allocated_amount > 0 else resource_obj.cost_per_unit,
