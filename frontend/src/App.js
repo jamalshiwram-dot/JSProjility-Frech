@@ -304,6 +304,12 @@ const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = nu
     expense_type: editingExpense?.expense_type || 'other',
     date: editingExpense?.date ? new Date(editingExpense.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
   });
+  const [linkToResource, setLinkToResource] = useState(false);
+  const [resourceData, setResourceData] = useState({
+    availability: '',
+    allocated_amount: '1',
+    description: ''
+  });
   const [loading, setLoading] = useState(false);
 
   const expenseTypes = [
