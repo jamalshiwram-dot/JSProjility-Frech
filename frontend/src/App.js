@@ -510,10 +510,44 @@ const ProjectDetail = ({ project, onBack }) => {
   };
 
   const handleResourceCreated = (newResource) => {
-    setResources([...resources, newResource]);
+    if (editingResource) {
+      // Update existing resource in list
+      setResources(resources.map(r => r.id === newResource.id ? newResource : r));
+      setEditingResource(null);
+    } else {
+      // Add new resource to list
+      setResources([...resources, newResource]);
+    }
     setShowAddResource(false);
     // Refresh project data to update budget summary if expense was created
     fetchProjectData();
+  };
+
+  const handleEditResource = (resource) => {
+    setEditingResource(resource);
+    setShowAddResource(true);
+  };
+
+  const handleDeleteResource = async (resourceId) => {
+    if (!window.confirm('Are you sure you want to delete this resource? This will also remove any associated expenses.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/resources/${resourceId}`);
+      toast.success('Resource deleted successfully!');
+      setResources(resources.filter(r => r.id !== resourceId));
+      // Refresh project data to update budget summary
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error deleting resource:', error);
+      toast.error('Failed to delete resource');
+    }
+  };
+
+  const handleCloseResourceForm = () => {
+    setShowAddResource(false);
+    setEditingResource(null);
   };
 
   if (!project) return null;
