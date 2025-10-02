@@ -338,8 +338,10 @@ const ProjectDetail = ({ project, onBack }) => {
 
   const updateProjectStage = async (newStage) => {
     try {
-      await axios.put(`${API}/projects/${project.id}/stage?stage=${newStage}`);
-      toast.success(`Project stage updated to ${newStage}!`);
+      await axios.put(`${API}/projects/${project.id}/stage`, null, {
+        params: { stage: newStage }
+      });
+      toast.success(`Project stage updated to ${newStage.charAt(0).toUpperCase() + newStage.slice(1)}!`);
       // Update the project stage locally
       project.stage = newStage;
       // Refresh project data
