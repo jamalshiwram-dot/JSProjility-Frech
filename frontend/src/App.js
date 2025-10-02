@@ -336,6 +336,20 @@ const ProjectDetail = ({ project, onBack }) => {
     }
   };
 
+  const updateProjectStage = async (newStage) => {
+    try {
+      await axios.put(`${API}/projects/${project.id}/stage?stage=${newStage}`);
+      toast.success(`Project stage updated to ${newStage}!`);
+      // Update the project stage locally
+      project.stage = newStage;
+      // Refresh project data
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error updating project stage:', error);
+      toast.error('Failed to update project stage');
+    }
+  };
+
   if (!project) return null;
 
   return (
