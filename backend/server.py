@@ -412,12 +412,17 @@ async def download_document(document_id: str):
 
 # Dashboard Analytics
 @api_router.put("/projects/{project_id}/stage")
-async def update_project_stage(project_id: str, stage: ProjectStage):
+async def update_project_stage(project_id: str, stage: str):
     """Update project stage - only for project managers"""
+    # Validate stage
+    valid_stages = [s.value for s in ProjectStage]
+    if stage not in valid_stages:
+        raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {valid_stages}")
+    
     result = await db.projects.update_one(
         {"id": project_id},
         {"$set": {
-            "stage": stage.value,
+            "stage": stage,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
@@ -425,9 +430,7 @@ async def update_project_stage(project_id: str, stage: ProjectStage):
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Get updated project
-    updated_project = await db.projects.find_one({"id": project_id})
-    return {"message": "Project stage updated successfully", "new_stage": stage.value}
+    return {"message": "Project stage updated successfully", "new_stage": stage}
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats():
