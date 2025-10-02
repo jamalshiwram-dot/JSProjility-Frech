@@ -396,7 +396,7 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
               data-testid="resource-cost-input"
             />
             <p className="text-sm text-gray-600 mt-1">
-              If you enter a cost, it will be automatically added to project expenses
+              If you enter a cost for vendors, equipment, or materials, it will be automatically added to project expenses
             </p>
           </div>
 
