@@ -423,6 +423,85 @@ async def get_project_expenses(project_id: str):
     expenses = await db.expenses.find({"project_id": project_id}).to_list(1000)
     return [Expense(**parse_from_mongo(expense)) for expense in expenses]
 
+@api_router.get("/expenses/{expense_id}", response_model=Expense)
+async def get_expense(expense_id: str):
+    expense = await db.expenses.find_one({"id": expense_id})
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return Expense(**parse_from_mongo(expense))
+
+@api_router.put("/expenses/{expense_id}", response_model=Expense)
+async def update_expense(expense_id: str, expense_update: ExpenseUpdate):
+    # Get existing expense
+    existing_expense = await db.expenses.find_one({"id": expense_id})
+    if not existing_expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    # Prepare update data
+    update_data = {k: v for k, v in expense_update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    # Update expense
+    prepared_data = prepare_for_mongo(update_data)
+    result = await db.expenses.update_one(
+        {"id": expense_id}, 
+        {"$set": prepared_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    # Get updated expense
+    updated_expense = await db.expenses.find_one({"id": expense_id})
+    updated_expense_obj = Expense(**parse_from_mongo(updated_expense))
+    
+    # If this expense is associated with a resource, update the resource's cost
+    if updated_expense_obj.resource_id and "amount" in update_data:
+        resource = await db.resources.find_one({"id": updated_expense_obj.resource_id})
+        if resource:
+            # Calculate new cost per unit based on expense amount and allocated amount
+            allocated_amount = resource.get("allocated_amount", 1.0)
+            if allocated_amount > 0:
+                new_cost_per_unit = updated_expense_obj.amount / allocated_amount
+            else:
+                new_cost_per_unit = updated_expense_obj.amount
+            
+            # Update the associated resource
+            await db.resources.update_one(
+                {"id": updated_expense_obj.resource_id},
+                {"$set": {
+                    "cost_per_unit": new_cost_per_unit,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+    
+    return updated_expense_obj
+
+@api_router.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: str):
+    # Check if expense exists
+    expense = await db.expenses.find_one({"id": expense_id})
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    # If associated with resource, clear the resource's cost
+    if expense.get("resource_id"):
+        await db.resources.update_one(
+            {"id": expense["resource_id"]},
+            {"$set": {
+                "cost_per_unit": None,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    
+    # Delete expense
+    result = await db.expenses.delete_one({"id": expense_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    return {"message": "Expense deleted successfully"}
+
 @api_router.get("/projects/{project_id}/budget-summary")
 async def get_budget_summary(project_id: str):
     # Get project budget
