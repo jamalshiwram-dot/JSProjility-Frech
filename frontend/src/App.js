@@ -682,12 +682,17 @@ const ProjectDetail = ({ project, onBack }) => {
       // Update existing expense in list
       setExpenses(expenses.map(e => e.id === newExpense.id ? newExpense : e));
       setEditingExpense(null);
+      
+      // If this expense is linked to a resource, show specific message
+      if (newExpense.resource_id) {
+        toast.success('Expense updated successfully! Associated resource has been updated too.');
+      }
     } else {
       // Add new expense to list
       setExpenses([...expenses, newExpense]);
     }
     setShowAddExpense(false);
-    // Refresh project data to update budget summary and resources
+    // Refresh project data to update budget summary and resources (especially important for linked expenses)
     fetchProjectData();
   };
 
