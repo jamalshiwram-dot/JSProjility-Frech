@@ -104,10 +104,11 @@ class Resource(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     type: ResourceType
-    cost_per_unit: float
+    cost_per_unit: Optional[float] = None
     availability: str
     project_id: str
     allocated_amount: float = 0.0
+    description: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ResourceCreate(BaseModel):
