@@ -697,15 +697,33 @@ const ProjectDetail = ({ project, onBack }) => {
   };
 
   const handleDeleteExpense = async (expenseId) => {
-    if (!window.confirm('Are you sure you want to delete this expense? If it\'s linked to a resource, the resource cost will be cleared.')) {
+    const expense = expenses.find(e => e.id === expenseId);
+    const isLinkedToResource = expense?.resource_id;
+    
+    const confirmMessage = isLinkedToResource 
+      ? 'Are you sure you want to delete this expense? This will also delete the associated resource from the Resources tab.'
+      : 'Are you sure you want to delete this expense?';
+    
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     try {
       await axios.delete(`${API}/expenses/${expenseId}`);
-      toast.success('Expense deleted successfully!');
-      setExpenses(expenses.filter(e => e.id !== expenseId));
-      // Refresh project data to update budget summary and resources
+      
+      if (isLinkedToResource) {
+        toast.success('Expense and associated resource deleted successfully!');
+        // Remove the associated resource from the resources list
+        setResources(resources.filter(r => r.id !== expense.resource_id));
+        // Remove all expenses associated with this resource
+        setExpenses(expenses.filter(e => e.resource_id !== expense.resource_id));
+      } else {
+        toast.success('Expense deleted successfully!');
+        // Just remove this expense
+        setExpenses(expenses.filter(e => e.id !== expenseId));
+      }
+      
+      // Refresh project data to update budget summary
       fetchProjectData();
     } catch (error) {
       console.error('Error deleting expense:', error);
