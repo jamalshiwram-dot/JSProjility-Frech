@@ -39,7 +39,8 @@ class ProjectStage(str, Enum):
     PLANNING = "planning"
     EXECUTION = "execution"
     MONITORING = "monitoring"
-    CLOSURE = "closure"
+    CLOSING = "closing"
+    CLOSED = "closed"
 
 class ResourceType(str, Enum):
     TEAM_MEMBER = "team_member"
