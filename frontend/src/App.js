@@ -172,7 +172,11 @@ const Dashboard = ({ projects, onProjectSelect }) => {
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No projects found. Create your first project!</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
