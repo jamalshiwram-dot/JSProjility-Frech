@@ -706,27 +706,86 @@ const ProjectDetail = ({ project, onBack }) => {
         
         <TabsContent value="resources">
           <Card>
-            <CardHeader>
-              <CardTitle>Project Resources</CardTitle>
-              <CardDescription>Manage team members, equipment, and materials</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Project Resources</CardTitle>
+                <CardDescription>Manage team members, vendors, equipment, and materials</CardDescription>
+              </div>
+              <Dialog open={showAddResource} onOpenChange={setShowAddResource}>
+                <DialogTrigger asChild>
+                  <Button data-testid="add-resource-button">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Resource
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Resource</DialogTitle>
+                    <DialogDescription>
+                      Add team members, vendors, equipment, or materials to your project.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ResourceForm 
+                    projectId={project.id}
+                    onResourceCreated={handleResourceCreated}
+                    onClose={() => setShowAddResource(false)}
+                  />
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {resources.map((resource) => (
-                  <div key={resource.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">{resource.name}</h4>
-                      <p className="text-sm text-gray-600">{resource.type.replace('_', ' ')}</p>
-                      <p className="text-sm text-gray-600">Availability: {resource.availability}</p>
+                {resources && resources.length > 0 ? resources.map((resource) => (
+                  <div key={resource.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <h4 className="font-medium">{resource.name}</h4>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge 
+                              className={
+                                resource.type === 'team_member' ? 'bg-blue-100 text-blue-800' :
+                                resource.type === 'vendor' ? 'bg-purple-100 text-purple-800' :
+                                resource.type === 'equipment' ? 'bg-green-100 text-green-800' :
+                                'bg-orange-100 text-orange-800'
+                              }
+                            >
+                              {resource.type.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">Availability: {resource.availability}</p>
+                          {resource.description && (
+                            <p className="text-sm text-gray-600 mt-1">{resource.description}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
-                      <div className="text-sm text-gray-600">Allocated: {resource.allocated_amount}</div>
+                      {resource.cost_per_unit && (
+                        <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
+                      )}
+                      {resource.allocated_amount > 0 && (
+                        <div className="text-sm text-gray-600">Quantity: {resource.allocated_amount}</div>
+                      )}
+                      {resource.cost_per_unit && resource.allocated_amount > 0 && (
+                        <div className="text-sm font-medium text-green-600">
+                          Total: {formatCurrency(resource.cost_per_unit * resource.allocated_amount)}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-                {resources.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">No resources assigned to this project</p>
+                )) : (
+                  <div className="text-center py-8">
+                    <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No resources assigned to this project</p>
+                    <Button 
+                      onClick={() => setShowAddResource(true)}
+                      data-testid="add-first-resource-button"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Add Your First Resource
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
