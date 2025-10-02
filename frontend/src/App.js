@@ -31,7 +31,9 @@ import {
   AlertTriangleIcon,
   FileTextIcon,
   BarChart3Icon,
-  TargetIcon
+  TargetIcon,
+  EditIcon,
+  TrashIcon
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://pmcentral-1.preview.emergentagent.com';
@@ -295,14 +297,14 @@ const ProjectForm = ({ onProjectCreated, onClose }) => {
 };
 
 // Resource Form Component
-const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
+const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource = null }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'team_member',
-    cost_per_unit: '',
-    availability: '',
-    allocated_amount: '',
-    description: ''
+    name: editingResource?.name || '',
+    type: editingResource?.type || 'team_member',
+    cost_per_unit: editingResource?.cost_per_unit || '',
+    availability: editingResource?.availability || '',
+    allocated_amount: editingResource?.allocated_amount || '',
+    description: editingResource?.description || ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -320,18 +322,27 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
     try {
       const resourceData = {
         ...formData,
-        project_id: projectId,
         cost_per_unit: formData.cost_per_unit ? parseFloat(formData.cost_per_unit) : null,
         allocated_amount: formData.allocated_amount ? parseFloat(formData.allocated_amount) : 0.0
       };
       
-      const response = await axios.post(`${API}/resources`, resourceData);
-      toast.success('Resource added successfully!');
-      onResourceCreated(response.data);
+      if (editingResource) {
+        // Update existing resource
+        if (!projectId) resourceData.project_id = projectId;
+        const response = await axios.put(`${API}/resources/${editingResource.id}`, resourceData);
+        toast.success('Resource updated successfully!');
+        onResourceCreated(response.data);
+      } else {
+        // Create new resource
+        resourceData.project_id = projectId;
+        const response = await axios.post(`${API}/resources`, resourceData);
+        toast.success('Resource added successfully!');
+        onResourceCreated(response.data);
+      }
       onClose();
     } catch (error) {
-      console.error('Error creating resource:', error);
-      toast.error('Failed to add resource');
+      console.error('Error saving resource:', error);
+      toast.error(editingResource ? 'Failed to update resource' : 'Failed to add resource');
     } finally {
       setLoading(false);
     }
@@ -429,7 +440,7 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose }) => {
           Cancel
         </Button>
         <Button type="submit" disabled={loading} data-testid="add-resource-submit">
-          {loading ? 'Adding...' : 'Add Resource'}
+          {loading ? (editingResource ? 'Updating...' : 'Adding...') : (editingResource ? 'Update Resource' : 'Add Resource')}
         </Button>
       </div>
     </form>
@@ -445,6 +456,7 @@ const ProjectDetail = ({ project, onBack }) => {
   const [documents, setDocuments] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddResource, setShowAddResource] = useState(false);
+  const [editingResource, setEditingResource] = useState(null);
 
   useEffect(() => {
     if (project) {
@@ -500,10 +512,44 @@ const ProjectDetail = ({ project, onBack }) => {
   };
 
   const handleResourceCreated = (newResource) => {
-    setResources([...resources, newResource]);
+    if (editingResource) {
+      // Update existing resource in list
+      setResources(resources.map(r => r.id === newResource.id ? newResource : r));
+      setEditingResource(null);
+    } else {
+      // Add new resource to list
+      setResources([...resources, newResource]);
+    }
     setShowAddResource(false);
     // Refresh project data to update budget summary if expense was created
     fetchProjectData();
+  };
+
+  const handleEditResource = (resource) => {
+    setEditingResource(resource);
+    setShowAddResource(true);
+  };
+
+  const handleDeleteResource = async (resourceId) => {
+    if (!window.confirm('Are you sure you want to delete this resource? This will also remove any associated expenses.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/resources/${resourceId}`);
+      toast.success('Resource deleted successfully!');
+      setResources(resources.filter(r => r.id !== resourceId));
+      // Refresh project data to update budget summary
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error deleting resource:', error);
+      toast.error('Failed to delete resource');
+    }
+  };
+
+  const handleCloseResourceForm = () => {
+    setShowAddResource(false);
+    setEditingResource(null);
   };
 
   if (!project) return null;
@@ -720,15 +766,16 @@ const ProjectDetail = ({ project, onBack }) => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Resource</DialogTitle>
+                    <DialogTitle>{editingResource ? 'Edit Resource' : 'Add New Resource'}</DialogTitle>
                     <DialogDescription>
-                      Add team members, vendors, equipment, or materials to your project.
+                      {editingResource ? 'Update resource information and costs.' : 'Add team members, vendors, equipment, or materials to your project.'}
                     </DialogDescription>
                   </DialogHeader>
                   <ResourceForm 
                     projectId={project.id}
                     onResourceCreated={handleResourceCreated}
-                    onClose={() => setShowAddResource(false)}
+                    onClose={handleCloseResourceForm}
+                    editingResource={editingResource}
                   />
                 </DialogContent>
               </Dialog>
@@ -760,18 +807,39 @@ const ProjectDetail = ({ project, onBack }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {resource.cost_per_unit && (
-                        <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
-                      )}
-                      {resource.allocated_amount > 0 && (
-                        <div className="text-sm text-gray-600">Quantity: {resource.allocated_amount}</div>
-                      )}
-                      {resource.cost_per_unit && resource.allocated_amount > 0 && (
-                        <div className="text-sm font-medium text-green-600">
-                          Total: {formatCurrency(resource.cost_per_unit * resource.allocated_amount)}
-                        </div>
-                      )}
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        {resource.cost_per_unit && (
+                          <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
+                        )}
+                        {resource.allocated_amount > 0 && (
+                          <div className="text-sm text-gray-600">Quantity: {resource.allocated_amount}</div>
+                        )}
+                        {resource.cost_per_unit && resource.allocated_amount > 0 && (
+                          <div className="text-sm font-medium text-green-600">
+                            Total: {formatCurrency(resource.cost_per_unit * resource.allocated_amount)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEditResource(resource)}
+                          data-testid={`edit-resource-${resource.id}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleDeleteResource(resource.id)}
+                          className="text-red-600 hover:text-red-800 hover:border-red-300"
+                          data-testid={`delete-resource-${resource.id}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )) : (
