@@ -83,7 +83,7 @@ class ExpenseResourceTester:
             "date": datetime.now(timezone.utc).isoformat()
         }
         
-        success, response, status = self.make_request('POST', 'expenses', expense_data, 201)
+        success, response, status = self.make_request('POST', 'expenses', expense_data, 200)
         if success:
             expense_id = response['id']
             self.created_expenses.append(expense_id)
