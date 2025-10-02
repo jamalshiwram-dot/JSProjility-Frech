@@ -258,6 +258,23 @@ async def create_resource(resource: ResourceCreate):
     resource_obj = Resource(**resource_dict)
     resource_data = prepare_for_mongo(resource_obj.dict())
     await db.resources.insert_one(resource_data)
+    
+    # Auto-create expense for Equipment and Materials with costs
+    if (resource_obj.type in [ResourceType.EQUIPMENT, ResourceType.MATERIAL] 
+        and resource_obj.cost_per_unit is not None 
+        and resource_obj.cost_per_unit > 0):
+        
+        expense_type = ExpenseType.EQUIPMENT if resource_obj.type == ResourceType.EQUIPMENT else ExpenseType.MATERIAL
+        expense = Expense(
+            description=f"{resource_obj.type.value.replace('_', ' ').title()}: {resource_obj.name}",
+            amount=resource_obj.cost_per_unit * resource_obj.allocated_amount if resource_obj.allocated_amount > 0 else resource_obj.cost_per_unit,
+            expense_type=expense_type,
+            project_id=resource_obj.project_id,
+            resource_id=resource_obj.id
+        )
+        expense_data = prepare_for_mongo(expense.dict())
+        await db.expenses.insert_one(expense_data)
+    
     return resource_obj
 
 @api_router.get("/projects/{project_id}/resources", response_model=List[Resource])
