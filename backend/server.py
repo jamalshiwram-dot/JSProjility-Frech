@@ -455,25 +455,52 @@ async def update_expense(expense_id: str, expense_update: ExpenseUpdate):
     updated_expense = await db.expenses.find_one({"id": expense_id})
     updated_expense_obj = Expense(**parse_from_mongo(updated_expense))
     
-    # If this expense is associated with a resource, update the resource's cost
-    if updated_expense_obj.resource_id and "amount" in update_data:
+    # If this expense is associated with a resource, sync all changes to the resource
+    if updated_expense_obj.resource_id:
         resource = await db.resources.find_one({"id": updated_expense_obj.resource_id})
         if resource:
-            # Calculate new cost per unit based on expense amount and allocated amount
-            allocated_amount = resource.get("allocated_amount", 1.0)
-            if allocated_amount > 0:
-                new_cost_per_unit = updated_expense_obj.amount / allocated_amount
-            else:
-                new_cost_per_unit = updated_expense_obj.amount
+            resource_updates = {}
             
-            # Update the associated resource
-            await db.resources.update_one(
-                {"id": updated_expense_obj.resource_id},
-                {"$set": {
-                    "cost_per_unit": new_cost_per_unit,
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }}
-            )
+            # Update resource name if expense description changed
+            if "description" in update_data:
+                # Extract the resource name from expense description
+                # Format is usually "Type: Name" so we extract the name part
+                description = updated_expense_obj.description
+                if ": " in description:
+                    # Extract name after the colon and space
+                    resource_name = description.split(": ", 1)[1]
+                else:
+                    # Use the entire description as the name
+                    resource_name = description
+                resource_updates["name"] = resource_name
+            
+            # Update resource type if expense type changed
+            if "expense_type" in update_data:
+                # Map expense type to resource type
+                expense_to_resource_type = {
+                    "vendor": "vendor",
+                    "equipment": "equipment", 
+                    "material": "material"
+                }
+                if updated_expense_obj.expense_type in expense_to_resource_type:
+                    resource_updates["type"] = expense_to_resource_type[updated_expense_obj.expense_type]
+            
+            # Update resource cost if expense amount changed
+            if "amount" in update_data:
+                allocated_amount = resource.get("allocated_amount", 1.0)
+                if allocated_amount > 0:
+                    new_cost_per_unit = updated_expense_obj.amount / allocated_amount
+                else:
+                    new_cost_per_unit = updated_expense_obj.amount
+                resource_updates["cost_per_unit"] = new_cost_per_unit
+            
+            # Apply updates to resource if any changes were made
+            if resource_updates:
+                resource_updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+                await db.resources.update_one(
+                    {"id": updated_expense_obj.resource_id},
+                    {"$set": resource_updates}
+                )
     
     return updated_expense_obj
 
