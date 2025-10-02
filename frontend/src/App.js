@@ -1076,26 +1076,101 @@ const ProjectDetail = ({ project, onBack }) => {
         
         <TabsContent value="expenses">
           <Card>
-            <CardHeader>
-              <CardTitle>Project Expenses</CardTitle>
-              <CardDescription>Track all project-related expenses</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Project Expenses</CardTitle>
+                <CardDescription>Track and manage all project-related expenses</CardDescription>
+              </div>
+              <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
+                <DialogTrigger asChild>
+                  <Button data-testid="add-expense-button">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Expense
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                    <DialogDescription>
+                      {editingExpense ? 'Update expense information and amount.' : 'Record a new expense for this project.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ExpenseForm 
+                    projectId={project.id}
+                    onExpenseCreated={handleExpenseCreated}
+                    onClose={handleCloseExpenseForm}
+                    editingExpense={editingExpense}
+                  />
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {expenses.map((expense) => (
-                  <div key={expense.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">{expense.description}</h4>
-                      <p className="text-sm text-gray-600">Type: {expense.expense_type.replace('_', ' ')}</p>
-                      <p className="text-sm text-gray-600">Date: {formatDate(expense.date)}</p>
+                {expenses && expenses.length > 0 ? expenses.map((expense) => (
+                  <div key={expense.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <h4 className="font-medium">{expense.description}</h4>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge 
+                              className={
+                                expense.expense_type === 'vendor' ? 'bg-purple-100 text-purple-800' :
+                                expense.expense_type === 'equipment' ? 'bg-green-100 text-green-800' :
+                                expense.expense_type === 'material' ? 'bg-orange-100 text-orange-800' :
+                                expense.expense_type === 'resource' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                              }
+                            >
+                              {expense.expense_type.replace('_', ' ')}
+                            </Badge>
+                            {expense.resource_id && (
+                              <Badge className="bg-blue-50 text-blue-700 text-xs">
+                                Linked to Resource
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">Date: {formatDate(expense.date)}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-lg">{formatCurrency(expense.amount)}</div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <div className="font-semibold text-lg">{formatCurrency(expense.amount)}</div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEditExpense(expense)}
+                          data-testid={`edit-expense-${expense.id}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleDeleteExpense(expense.id)}
+                          className="text-red-600 hover:text-red-800 hover:border-red-300"
+                          data-testid={`delete-expense-${expense.id}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                ))}
-                {expenses.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">No expenses recorded for this project</p>
+                )) : (
+                  <div className="text-center py-8">
+                    <DollarSignIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No expenses recorded for this project</p>
+                    <Button 
+                      onClick={() => setShowAddExpense(true)}
+                      data-testid="add-first-expense-button"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Add Your First Expense
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
