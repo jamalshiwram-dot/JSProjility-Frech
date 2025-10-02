@@ -805,18 +805,39 @@ const ProjectDetail = ({ project, onBack }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {resource.cost_per_unit && (
-                        <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
-                      )}
-                      {resource.allocated_amount > 0 && (
-                        <div className="text-sm text-gray-600">Quantity: {resource.allocated_amount}</div>
-                      )}
-                      {resource.cost_per_unit && resource.allocated_amount > 0 && (
-                        <div className="text-sm font-medium text-green-600">
-                          Total: {formatCurrency(resource.cost_per_unit * resource.allocated_amount)}
-                        </div>
-                      )}
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        {resource.cost_per_unit && (
+                          <div className="font-semibold">{formatCurrency(resource.cost_per_unit)}/unit</div>
+                        )}
+                        {resource.allocated_amount > 0 && (
+                          <div className="text-sm text-gray-600">Quantity: {resource.allocated_amount}</div>
+                        )}
+                        {resource.cost_per_unit && resource.allocated_amount > 0 && (
+                          <div className="text-sm font-medium text-green-600">
+                            Total: {formatCurrency(resource.cost_per_unit * resource.allocated_amount)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEditResource(resource)}
+                          data-testid={`edit-resource-${resource.id}`}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleDeleteResource(resource.id)}
+                          className="text-red-600 hover:text-red-800 hover:border-red-300"
+                          data-testid={`delete-resource-${resource.id}`}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )) : (
