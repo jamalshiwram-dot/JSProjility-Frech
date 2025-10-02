@@ -430,6 +430,66 @@ const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = nu
         </Select>
       </div>
 
+      {/* Link to Resource Option */}
+      {!editingExpense && (formData.expense_type === 'vendor' || formData.expense_type === 'equipment' || formData.expense_type === 'material') && (
+        <div className="border rounded-lg p-4 bg-blue-50">
+          <div className="flex items-center space-x-2 mb-3">
+            <input
+              type="checkbox"
+              id="link-to-resource"
+              checked={linkToResource}
+              onChange={(e) => setLinkToResource(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            <Label htmlFor="link-to-resource" className="font-medium text-blue-900">
+              🔗 Link to Resources Tab?
+            </Label>
+          </div>
+          <p className="text-sm text-blue-800 mb-3">
+            Create a corresponding resource in the Resources tab that will stay synchronized with this expense.
+          </p>
+          
+          {linkToResource && (
+            <div className="space-y-3 border-t border-blue-200 pt-3">
+              <div>
+                <Label htmlFor="resource-availability">Resource Availability</Label>
+                <Input
+                  id="resource-availability"
+                  value={resourceData.availability}
+                  onChange={(e) => setResourceData({ ...resourceData, availability: e.target.value })}
+                  placeholder="e.g., Full-time, Available, On-demand"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="resource-quantity">Quantity/Amount</Label>
+                <Input
+                  id="resource-quantity"
+                  type="number"
+                  step="0.01"
+                  value={resourceData.allocated_amount}
+                  onChange={(e) => setResourceData({ ...resourceData, allocated_amount: e.target.value })}
+                  placeholder="1"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="resource-description">Resource Description (Optional)</Label>
+                <Textarea
+                  id="resource-description"
+                  value={resourceData.description}
+                  onChange={(e) => setResourceData({ ...resourceData, description: e.target.value })}
+                  placeholder="Additional details about this resource"
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="expense-amount">Amount ($)</Label>
