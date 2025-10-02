@@ -484,23 +484,23 @@ async def delete_expense(expense_id: str):
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
     
-    # If associated with resource, clear the resource's cost
+    # If associated with resource, delete the entire resource
     if expense.get("resource_id"):
-        await db.resources.update_one(
-            {"id": expense["resource_id"]},
-            {"$set": {
-                "cost_per_unit": None,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
+        resource_result = await db.resources.delete_one({"id": expense["resource_id"]})
+        if resource_result.deleted_count > 0:
+            # Also delete any other expenses associated with this resource
+            await db.expenses.delete_many({"resource_id": expense["resource_id"]})
+        else:
+            # If resource doesn't exist, still proceed with expense deletion
+            pass
     
-    # Delete expense
-    result = await db.expenses.delete_one({"id": expense_id})
+    # Delete the main expense (if not already deleted above)
+    if not expense.get("resource_id"):
+        result = await db.expenses.delete_one({"id": expense_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Expense not found")
     
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Expense not found")
-    
-    return {"message": "Expense deleted successfully"}
+    return {"message": "Expense and associated resource deleted successfully"}
 
 @api_router.get("/projects/{project_id}/budget-summary")
 async def get_budget_summary(project_id: str):
