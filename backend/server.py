@@ -411,10 +411,28 @@ async def download_document(document_id: str):
     return FileResponse(file_path, filename=document["name"])
 
 # Dashboard Analytics
+@api_router.put("/projects/{project_id}/stage")
+async def update_project_stage(project_id: str, stage: ProjectStage):
+    """Update project stage - only for project managers"""
+    result = await db.projects.update_one(
+        {"id": project_id},
+        {"$set": {
+            "stage": stage.value,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Get updated project
+    updated_project = await db.projects.find_one({"id": project_id})
+    return {"message": "Project stage updated successfully", "new_stage": stage.value}
+
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats():
     total_projects = await db.projects.count_documents({})
-    active_projects = await db.projects.count_documents({"stage": {"$nin": ["closure"]}})
+    active_projects = await db.projects.count_documents({"stage": {"$nin": ["closing", "closed"]}})
     total_expenses = 0
     
     # Get all expenses
