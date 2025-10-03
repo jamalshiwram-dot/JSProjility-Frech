@@ -1800,6 +1800,23 @@ const ProjectDetail = ({ project, onBack }) => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Timeline Manager Dialog */}
+      <Dialog open={showTimelineManager} onOpenChange={setShowTimelineManager}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Timeline Management - {project.name}</DialogTitle>
+            <DialogDescription>
+              Manage project timeline, dates, and add milestone tracking points.
+            </DialogDescription>
+          </DialogHeader>
+          <TimelineManager 
+            project={project}
+            onTimelineUpdated={handleTimelineUpdated}
+            onClose={() => setShowTimelineManager(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
