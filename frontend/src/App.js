@@ -1072,7 +1072,7 @@ const ProjectDetail = ({ project, onBack }) => {
                         'text-gray-900'
                       }`}>
                         {timeline.isOverdue ? 
-                          `${Math.abs(timeline.daysRemaining)} days overdue` :
+                          `${timeline.daysOverdue} days overdue` :
                           `${timeline.daysRemaining} days`
                         }
                       </div>
