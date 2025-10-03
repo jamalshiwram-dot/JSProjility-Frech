@@ -1140,6 +1140,15 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     try {
       await axios.put(`${API}/milestones/${milestoneId}/complete`);
       toast.success('Milestone completed!');
+      
+      // Update the milestones state immediately for better UX
+      setMilestones(milestones.map(m => 
+        m.id === milestoneId 
+          ? { ...m, completed: true, completed_date: new Date().toISOString() }
+          : m
+      ));
+      
+      // Refresh all project data
       fetchProjectData();
     } catch (error) {
       console.error('Error completing milestone:', error);
