@@ -766,31 +766,17 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource =
 };
 
 // Timeline Management Component
-const TimelineManager = ({ project, onTimelineUpdated, onClose }) => {
+const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMilestoneUpdate }) => {
   const [projectDates, setProjectDates] = useState({
     start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
     end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : ''
   });
-  const [timelineMilestones, setTimelineMilestones] = useState([]);
   const [newMilestone, setNewMilestone] = useState({
     title: '',
     due_date: '',
     description: ''
   });
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchTimelineMilestones();
-  }, []);
-
-  const fetchTimelineMilestones = async () => {
-    try {
-      const response = await axios.get(`${API}/projects/${project.id}/milestones`);
-      setTimelineMilestones(response.data || []);
-    } catch (error) {
-      console.error('Error fetching timeline milestones:', error);
-    }
-  };
 
   const handleUpdateProjectDates = async () => {
     setLoading(true);
