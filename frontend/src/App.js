@@ -1235,9 +1235,17 @@ const ProjectDetail = ({ project, onBack }) => {
     setEditingExpense(null);
   };
 
-  const handleTimelineUpdated = () => {
+  const handleTimelineUpdated = async () => {
     // Refresh project data to show updated timeline
-    fetchProjectData();
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}`);
+      // Update the project object with the latest data
+      Object.assign(project, response.data);
+      // Refresh all project data
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error refreshing project data:', error);
+    }
   };
 
   if (!project) return null;
