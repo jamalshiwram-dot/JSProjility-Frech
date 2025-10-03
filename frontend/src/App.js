@@ -197,6 +197,34 @@ const Dashboard = ({ projects, onProjectSelect }) => {
                 <div className="flex-1">
                   <h3 className="font-semibold">{project.name}</h3>
                   <p className="text-sm text-gray-600">{project.description}</p>
+                  {(() => {
+                    const timeline = calculateTimelineProgress(project.start_date, project.end_date);
+                    return (
+                      <div className="mt-2 space-y-1">
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div 
+                            className={`h-1.5 rounded-full ${
+                              timeline.isOverdue ? 'bg-red-500' :
+                              timeline.isDangerZone ? 'bg-orange-500' :
+                              timeline.progressPercentage >= 75 ? 'bg-green-500' :
+                              timeline.progressPercentage >= 50 ? 'bg-blue-500' :
+                              'bg-gray-400'
+                            }`}
+                            style={{ width: `${Math.min(timeline.progressPercentage, 100)}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">{timeline.progressPercentage}% complete</span>
+                          <span className={timeline.isDangerZone || timeline.isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}>
+                            {timeline.isOverdue ? 
+                              `${Math.abs(timeline.daysRemaining)}d overdue` :
+                              `${timeline.daysRemaining}d left`
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center space-x-4">
                   <Badge className={getStageColor(project.stage)}>
