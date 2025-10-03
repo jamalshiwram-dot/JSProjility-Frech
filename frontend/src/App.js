@@ -800,12 +800,17 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose }) => {
         end_date: new Date(projectDates.end_date).toISOString()
       };
       
-      await axios.put(`${API}/projects/${project.id}`, updateData);
-      toast.success('Project timeline updated successfully!');
-      onTimelineUpdated();
+      const response = await axios.put(`${API}/projects/${project.id}`, updateData);
+      
+      // Update the local project object
+      project.start_date = response.data.start_date;
+      project.end_date = response.data.end_date;
+      
+      toast.success('Project timeline saved successfully!');
+      onTimelineUpdated(); // This will refresh the parent component
     } catch (error) {
       console.error('Error updating project dates:', error);
-      toast.error('Failed to update project timeline');
+      toast.error('Failed to save project timeline');
     } finally {
       setLoading(false);
     }
