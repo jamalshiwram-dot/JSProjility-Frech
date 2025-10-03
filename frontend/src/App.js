@@ -121,6 +121,14 @@ const Dashboard = ({ projects, onProjectSelect }) => {
     overdue_milestones: 0
   });
 
+  // Calculate timeline-based stats
+  const timelineStats = projects ? projects.reduce((acc, project) => {
+    const timeline = calculateTimelineProgress(project.start_date, project.end_date);
+    if (timeline.isOverdue) acc.overdue++;
+    if (timeline.isDangerZone) acc.dangerZone++;
+    return acc;
+  }, { overdue: 0, dangerZone: 0 }) : { overdue: 0, dangerZone: 0 };
+
   useEffect(() => {
     fetchDashboardStats();
   }, []);
