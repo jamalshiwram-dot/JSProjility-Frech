@@ -964,24 +964,85 @@ const ProjectDetail = ({ project, onBack }) => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <CalendarIcon className="h-5 w-5" />
-              <span>Timeline</span>
+              <span>Project Timeline</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Start Date:</span>
-                <span>{formatDate(project.start_date)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>End Date:</span>
-                <span>{formatDate(project.end_date)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Duration:</span>
-                <span>{Math.ceil((new Date(project.end_date) - new Date(project.start_date)) / (1000 * 60 * 60 * 24))} days</span>
-              </div>
-            </div>
+            {(() => {
+              const timeline = calculateTimelineProgress(project.start_date, project.end_date);
+              return (
+                <div className="space-y-4">
+                  {/* Timeline Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progress</span>
+                      <span className="font-medium">{timeline.progressPercentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div 
+                        className={`h-3 rounded-full transition-all duration-300 ${
+                          timeline.isOverdue ? 'bg-red-500' :
+                          timeline.isDangerZone ? 'bg-orange-500' :
+                          timeline.progressPercentage >= 75 ? 'bg-green-500' :
+                          timeline.progressPercentage >= 50 ? 'bg-blue-500' :
+                          'bg-gray-400'
+                        }`}
+                        style={{ width: `${Math.min(timeline.progressPercentage, 100)}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Start: {formatDate(project.start_date)}</span>
+                      <span>End: {formatDate(project.end_date)}</span>
+                    </div>
+                  </div>
+
+                  {/* Timeline Stats */}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-gray-600">Days Elapsed</div>
+                      <div className="font-semibold text-lg">{timeline.daysElapsed}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Total Duration</div>
+                      <div className="font-semibold text-lg">{timeline.daysTotal} days</div>
+                    </div>
+                  </div>
+
+                  {/* Days Until Completion */}
+                  <div className="border-t pt-3">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600 mb-1">Days Until Project Completion</div>
+                      <div className={`text-2xl font-bold ${
+                        timeline.isOverdue ? 'text-red-600' :
+                        timeline.isDangerZone ? 'text-red-600' :
+                        timeline.daysRemaining <= 7 ? 'text-orange-600' :
+                        'text-gray-900'
+                      }`}>
+                        {timeline.isOverdue ? 
+                          `${Math.abs(timeline.daysRemaining)} days overdue` :
+                          `${timeline.daysRemaining} days`
+                        }
+                      </div>
+                      {timeline.isDangerZone && !timeline.isOverdue && (
+                        <div className="text-xs text-red-600 font-medium mt-1">
+                          ⚠️ Final 10% - Deadline Approaching!
+                        </div>
+                      )}
+                      {timeline.isOverdue && (
+                        <div className="text-xs text-red-600 font-medium mt-1">
+                          🚨 Project Overdue
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Current Date Indicator */}
+                  <div className="text-center text-xs text-gray-500 border-t pt-2">
+                    Current Date: {formatDate(new Date().toISOString())}
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
         
