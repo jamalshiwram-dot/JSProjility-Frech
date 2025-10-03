@@ -407,6 +407,13 @@ async def complete_milestone(milestone_id: str):
         raise HTTPException(status_code=404, detail="Milestone not found")
     return {"message": "Milestone completed"}
 
+@api_router.delete("/milestones/{milestone_id}")
+async def delete_milestone(milestone_id: str):
+    result = await db.milestones.delete_one({"id": milestone_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    return {"message": "Milestone deleted successfully"}
+
 # Expenses
 class ExpenseWithResource(BaseModel):
     expense: ExpenseCreate
