@@ -382,6 +382,103 @@ const ProjectForm = ({ onProjectCreated, onClose }) => {
   );
 };
 
+// Milestone Form Component
+const MilestoneForm = ({ projectId, projectStartDate, projectEndDate, onMilestoneCreated, onClose }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    due_date: '',
+    description: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      // Validate milestone date is within project timeline
+      const milestoneDate = new Date(formData.due_date);
+      const startDate = new Date(projectStartDate);
+      const endDate = new Date(projectEndDate);
+      
+      if (milestoneDate < startDate || milestoneDate > endDate) {
+        toast.error(`Milestone date must be between ${formatDate(projectStartDate)} and ${formatDate(projectEndDate)}`);
+        setLoading(false);
+        return;
+      }
+      
+      const milestoneData = {
+        ...formData,
+        project_id: projectId,
+        due_date: new Date(formData.due_date).toISOString()
+      };
+      
+      const response = await axios.post(`${API}/milestones`, milestoneData);
+      toast.success('Milestone added successfully!');
+      onMilestoneCreated(response.data);
+      onClose();
+    } catch (error) {
+      console.error('Error creating milestone:', error);
+      toast.error('Failed to add milestone');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="milestone-title">Milestone Title</Label>
+        <Input
+          id="milestone-title"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          required
+          data-testid="milestone-title-input"
+          placeholder="e.g., Design Phase Complete, Testing Begin"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="milestone-due-date">Due Date</Label>
+        <Input
+          id="milestone-due-date"
+          type="date"
+          value={formData.due_date}
+          onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+          min={projectStartDate ? new Date(projectStartDate).toISOString().split('T')[0] : ''}
+          max={projectEndDate ? new Date(projectEndDate).toISOString().split('T')[0] : ''}
+          required
+          data-testid="milestone-due-date-input"
+        />
+        <p className="text-xs text-gray-600 mt-1">
+          Must be between {formatDate(projectStartDate)} and {formatDate(projectEndDate)}
+        </p>
+      </div>
+      
+      <div>
+        <Label htmlFor="milestone-description">Description (Optional)</Label>
+        <Textarea
+          id="milestone-description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Additional details about this milestone"
+          rows={3}
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading} data-testid="add-milestone-submit">
+          {loading ? 'Adding...' : 'Add Milestone'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 // Expense Form Component
 const ExpenseForm = ({ projectId, onExpenseCreated, onClose, editingExpense = null }) => {
   const [formData, setFormData] = useState({
