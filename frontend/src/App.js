@@ -1312,11 +1312,16 @@ const ProjectDetail = ({ project, onBack }) => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setShowTimelineManager(true)}>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CalendarIcon className="h-5 w-5" />
-              <span>Project Timeline</span>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CalendarIcon className="h-5 w-5" />
+                <span>Project Timeline</span>
+              </div>
+              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                Click to Manage
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
