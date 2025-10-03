@@ -876,11 +876,20 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
   const [loading, setLoading] = useState(false);
 
   const handleUpdateProjectDates = async () => {
+    // Validate dates
+    const startDate = new Date(projectDates.start_date);
+    const endDate = new Date(projectDates.end_date);
+    
+    if (endDate <= startDate) {
+      toast.error('End date must be after start date. Please fix the dates.');
+      return;
+    }
+    
     setLoading(true);
     try {
       const updateData = {
-        start_date: new Date(projectDates.start_date).toISOString(),
-        end_date: new Date(projectDates.end_date).toISOString()
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString()
       };
       
       const response = await axios.put(`${API}/projects/${project.id}`, updateData);
