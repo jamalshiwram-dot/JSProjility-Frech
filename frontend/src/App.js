@@ -242,7 +242,7 @@ const Dashboard = ({ projects, onProjectSelect }) => {
                           <span className="text-gray-500">{timeline.progressPercentage}% complete</span>
                           <span className={timeline.isDangerZone || timeline.isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}>
                             {timeline.isOverdue ? 
-                              `${Math.abs(timeline.daysRemaining)}d overdue` :
+                              `${timeline.daysOverdue}d overdue` :
                               `${timeline.daysRemaining}d left`
                             }
                           </span>
