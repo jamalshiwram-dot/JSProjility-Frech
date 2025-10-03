@@ -1407,6 +1407,13 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     }
   };
 
+  const handleMilestoneCreated = (newMilestone) => {
+    setMilestones([...milestones, newMilestone]);
+    setShowAddMilestone(false);
+    // Refresh project data to update progress calculations
+    fetchProjectData();
+  };
+
   if (!project) return null;
 
   return (
