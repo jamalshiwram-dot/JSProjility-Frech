@@ -57,6 +57,38 @@ const formatDate = (dateString) => {
   });
 };
 
+// Helper function to calculate timeline progress
+const calculateTimelineProgress = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const current = new Date();
+  
+  const totalDuration = end.getTime() - start.getTime();
+  const elapsed = current.getTime() - start.getTime();
+  
+  const progressPercentage = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+  const daysTotal = Math.ceil(totalDuration / (1000 * 60 * 60 * 24));
+  const daysElapsed = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
+  const daysRemaining = Math.max(0, daysTotal - daysElapsed);
+  
+  // Check if within 10% of completion (danger zone)
+  const timeRemaining = end.getTime() - current.getTime();
+  const isDangerZone = timeRemaining <= (totalDuration * 0.1) && timeRemaining > 0;
+  const isOverdue = current > end;
+  
+  return {
+    progressPercentage: Math.round(progressPercentage),
+    daysTotal,
+    daysElapsed,
+    daysRemaining,
+    isDangerZone,
+    isOverdue,
+    startDate: start,
+    endDate: end,
+    currentDate: current
+  };
+};
+
 // Project stage colors
 const getStageColor = (stage) => {
   const colors = {
