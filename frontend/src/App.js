@@ -871,6 +871,10 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose }) => {
               value={projectDates.start_date}
               onChange={(e) => setProjectDates({ ...projectDates, start_date: e.target.value })}
               data-testid="timeline-start-date"
+              className={
+                projectDates.start_date !== (project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '') 
+                  ? 'border-yellow-400 bg-yellow-50' : ''
+              }
             />
           </div>
           <div>
@@ -881,9 +885,23 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose }) => {
               value={projectDates.end_date}
               onChange={(e) => setProjectDates({ ...projectDates, end_date: e.target.value })}
               data-testid="timeline-end-date"
+              className={
+                projectDates.end_date !== (project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : '') 
+                  ? 'border-yellow-400 bg-yellow-50' : ''
+              }
             />
           </div>
         </div>
+
+        {/* Unsaved changes indicator */}
+        {(projectDates.start_date !== (project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '') ||
+          projectDates.end_date !== (project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : '')) && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800">
+              ⚠️ You have unsaved changes. Click "Save Project Timeline" to apply your changes.
+            </p>
+          </div>
+        )}
 
         <div className="flex items-center space-x-3">
           <Button 
