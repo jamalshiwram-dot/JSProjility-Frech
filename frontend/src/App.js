@@ -1026,9 +1026,9 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
         <div className="flex items-center space-x-3">
           <Button 
             onClick={handleUpdateProjectDates} 
-            disabled={loading}
+            disabled={loading || (projectDates.start_date && projectDates.end_date && new Date(projectDates.end_date) <= new Date(projectDates.start_date))}
             data-testid="save-timeline-btn"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400"
           >
             {loading ? 'Saving Timeline...' : '💾 Save Project Timeline'}
           </Button>
