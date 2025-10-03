@@ -1687,24 +1687,6 @@ const ProjectDetail = ({ project, onBack }) => {
                 </DialogContent>
               </Dialog>
             </CardHeader>
-            
-      {/* Timeline Manager Dialog */}
-      <Dialog open={showTimelineManager} onOpenChange={setShowTimelineManager}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Timeline Management - {project.name}</DialogTitle>
-            <DialogDescription>
-              Manage project timeline, dates, and add milestone tracking points.
-            </DialogDescription>
-          </DialogHeader>
-          <TimelineManager 
-            project={project}
-            onTimelineUpdated={handleTimelineUpdated}
-            onClose={() => setShowTimelineManager(false)}
-          />
-        </DialogContent>
-      </Dialog>
-            
             <CardContent>
               <div className="space-y-4">
                 {expenses && expenses.length > 0 ? expenses.map((expense) => (
