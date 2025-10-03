@@ -1947,6 +1947,7 @@ function App() {
           <ProjectDetail 
             project={selectedProject} 
             onBack={handleBackToDashboard}
+            onProjectUpdated={handleProjectUpdated}
           />
         )}
       </main>
