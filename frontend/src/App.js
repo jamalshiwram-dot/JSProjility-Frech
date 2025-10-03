@@ -836,8 +836,12 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
 
     try {
       await axios.delete(`${API}/milestones/${milestoneId}`);
-      setTimelineMilestones(timelineMilestones.filter(m => m.id !== milestoneId));
       toast.success('Milestone deleted successfully!');
+      
+      // Update milestones in parent component
+      if (onMilestoneUpdate) {
+        onMilestoneUpdate();
+      }
     } catch (error) {
       console.error('Error deleting milestone:', error);
       toast.error('Failed to delete milestone');
