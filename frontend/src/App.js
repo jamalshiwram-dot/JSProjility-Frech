@@ -1047,8 +1047,12 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
                           onClick={async () => {
                             try {
                               await axios.put(`${API}/milestones/${milestone.id}/complete`);
-                              fetchTimelineMilestones();
                               toast.success('Milestone completed!');
+                              
+                              // Update milestones in parent component
+                              if (onMilestoneUpdate) {
+                                onMilestoneUpdate();
+                              }
                             } catch (error) {
                               toast.error('Failed to complete milestone');
                             }
