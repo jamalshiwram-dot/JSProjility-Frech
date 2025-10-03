@@ -1243,6 +1243,10 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
       Object.assign(project, response.data);
       // Refresh all project data
       fetchProjectData();
+      // Notify parent component to update projects list
+      if (onProjectUpdated) {
+        onProjectUpdated(response.data);
+      }
     } catch (error) {
       console.error('Error refreshing project data:', error);
     }
