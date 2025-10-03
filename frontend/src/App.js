@@ -1003,9 +1003,19 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
           </div>
         </div>
 
+        {/* Date validation error */}
+        {projectDates.start_date && projectDates.end_date && new Date(projectDates.end_date) <= new Date(projectDates.start_date) && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-800">
+              ❌ Invalid dates: End date must be after start date. Please correct the dates before saving.
+            </p>
+          </div>
+        )}
+
         {/* Unsaved changes indicator */}
         {(projectDates.start_date !== (project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '') ||
-          projectDates.end_date !== (project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : '')) && (
+          projectDates.end_date !== (project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : '')) && 
+          !(projectDates.start_date && projectDates.end_date && new Date(projectDates.end_date) <= new Date(projectDates.start_date)) && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <p className="text-sm text-yellow-800">
               ⚠️ You have unsaved changes. Click "Save Project Timeline" to apply your changes.
