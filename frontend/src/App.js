@@ -178,11 +178,22 @@ const Dashboard = ({ projects, onProjectSelect }) => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue Milestones</CardTitle>
+            <CardTitle className="text-sm font-medium">Projects at Risk</CardTitle>
             <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.overdue_milestones}</div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-red-600">
+                {timelineStats.overdue + timelineStats.dangerZone}
+              </div>
+              {(timelineStats.overdue > 0 || timelineStats.dangerZone > 0) && (
+                <div className="text-xs text-gray-600">
+                  {timelineStats.overdue > 0 && `${timelineStats.overdue} overdue`}
+                  {timelineStats.overdue > 0 && timelineStats.dangerZone > 0 && ', '}
+                  {timelineStats.dangerZone > 0 && `${timelineStats.dangerZone} near deadline`}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
