@@ -1109,6 +1109,7 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showTimelineManager, setShowTimelineManager] = useState(false);
+  const [showAddMilestone, setShowAddMilestone] = useState(false);
 
   useEffect(() => {
     if (project) {
