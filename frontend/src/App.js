@@ -1007,8 +1007,8 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
 
         {/* Existing Milestones */}
         <div className="space-y-3">
-          {timelineMilestones.length > 0 ? (
-            timelineMilestones
+          {milestones && milestones.length > 0 ? (
+            milestones
               .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
               .map((milestone) => {
                 const milestoneDate = new Date(milestone.due_date);
