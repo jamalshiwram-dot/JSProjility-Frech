@@ -914,11 +914,21 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
       return;
     }
 
+    // Validate milestone date is within project timeline
+    const milestoneDate = new Date(newMilestone.due_date);
+    const startDate = new Date(projectDates.start_date);
+    const endDate = new Date(projectDates.end_date);
+    
+    if (milestoneDate < startDate || milestoneDate > endDate) {
+      toast.error(`Milestone date must be between ${formatDate(projectDates.start_date)} and ${formatDate(projectDates.end_date)}`);
+      return;
+    }
+
     try {
       const milestoneData = {
         ...newMilestone,
         project_id: project.id,
-        due_date: new Date(newMilestone.due_date).toISOString()
+        due_date: milestoneDate.toISOString()
       };
       
       const response = await axios.post(`${API}/milestones`, milestoneData);
