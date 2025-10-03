@@ -1064,7 +1064,7 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose }) => {
 };
 
 // Project Detail Component
-const ProjectDetail = ({ project, onBack }) => {
+const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   const [resources, setResources] = useState([]);
   const [milestones, setMilestones] = useState([]);
   const [expenses, setExpenses] = useState([]);
