@@ -1685,13 +1685,38 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
         
         <TabsContent value="milestones">
           <Card>
-            <CardHeader>
-              <CardTitle>Project Milestones</CardTitle>
-              <CardDescription>Track important project milestones and deadlines</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Project Milestones</CardTitle>
+                <CardDescription>Track important project milestones and deadlines</CardDescription>
+              </div>
+              <Dialog open={showAddMilestone} onOpenChange={setShowAddMilestone}>
+                <DialogTrigger asChild>
+                  <Button data-testid="add-milestone-button">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Milestone
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Milestone</DialogTitle>
+                    <DialogDescription>
+                      Create a milestone to track important project deadlines.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <MilestoneForm 
+                    projectId={project.id}
+                    projectStartDate={project.start_date}
+                    projectEndDate={project.end_date}
+                    onMilestoneCreated={handleMilestoneCreated}
+                    onClose={() => setShowAddMilestone(false)}
+                  />
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {milestones.map((milestone) => (
+                {milestones && milestones.length > 0 ? milestones.map((milestone) => (
                   <div key={milestone.id} className={`flex items-center justify-between p-4 border rounded-lg ${
                     milestone.completed ? 'bg-green-50 border-green-200' : 'bg-white'
                   }`}>
