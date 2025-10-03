@@ -1230,6 +1230,11 @@ const ProjectDetail = ({ project, onBack }) => {
     setEditingExpense(null);
   };
 
+  const handleTimelineUpdated = () => {
+    // Refresh project data to show updated timeline
+    fetchProjectData();
+  };
+
   if (!project) return null;
 
   return (
