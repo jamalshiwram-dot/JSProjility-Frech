@@ -885,13 +885,30 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose }) => {
           </div>
         </div>
 
-        <Button 
-          onClick={handleUpdateProjectDates} 
-          disabled={loading}
-          data-testid="update-timeline-btn"
-        >
-          {loading ? 'Updating...' : 'Update Project Timeline'}
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button 
+            onClick={handleUpdateProjectDates} 
+            disabled={loading}
+            data-testid="save-timeline-btn"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {loading ? 'Saving Timeline...' : '💾 Save Project Timeline'}
+          </Button>
+          
+          {/* Reset button */}
+          <Button 
+            variant="outline"
+            onClick={() => {
+              setProjectDates({
+                start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
+                end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : ''
+              });
+            }}
+            disabled={loading}
+          >
+            Reset to Original
+          </Button>
+        </div>
 
         {/* Current Timeline Status */}
         <div className="bg-gray-50 p-4 rounded-lg">
