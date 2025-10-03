@@ -765,6 +765,299 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource =
   );
 };
 
+// Timeline Management Component
+const TimelineManager = ({ project, onTimelineUpdated, onClose }) => {
+  const [projectDates, setProjectDates] = useState({
+    start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
+    end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : ''
+  });
+  const [timelineMilestones, setTimelineMilestones] = useState([]);
+  const [newMilestone, setNewMilestone] = useState({
+    title: '',
+    due_date: '',
+    description: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchTimelineMilestones();
+  }, []);
+
+  const fetchTimelineMilestones = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/milestones`);
+      setTimelineMilestones(response.data || []);
+    } catch (error) {
+      console.error('Error fetching timeline milestones:', error);
+    }
+  };
+
+  const handleUpdateProjectDates = async () => {
+    setLoading(true);
+    try {
+      const updateData = {
+        start_date: new Date(projectDates.start_date).toISOString(),
+        end_date: new Date(projectDates.end_date).toISOString()
+      };
+      
+      await axios.put(`${API}/projects/${project.id}`, updateData);
+      toast.success('Project timeline updated successfully!');
+      onTimelineUpdated();
+    } catch (error) {
+      console.error('Error updating project dates:', error);
+      toast.error('Failed to update project timeline');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddMilestone = async () => {
+    if (!newMilestone.title || !newMilestone.due_date) {
+      toast.error('Please fill in milestone title and date');
+      return;
+    }
+
+    try {
+      const milestoneData = {
+        ...newMilestone,
+        project_id: project.id,
+        due_date: new Date(newMilestone.due_date).toISOString()
+      };
+      
+      const response = await axios.post(`${API}/milestones`, milestoneData);
+      setTimelineMilestones([...timelineMilestones, response.data]);
+      setNewMilestone({ title: '', due_date: '', description: '' });
+      toast.success('Timeline milestone added successfully!');
+    } catch (error) {
+      console.error('Error adding milestone:', error);
+      toast.error('Failed to add milestone');
+    }
+  };
+
+  const handleDeleteMilestone = async (milestoneId) => {
+    if (!window.confirm('Are you sure you want to delete this milestone?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/milestones/${milestoneId}`);
+      setTimelineMilestones(timelineMilestones.filter(m => m.id !== milestoneId));
+      toast.success('Milestone deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting milestone:', error);
+      toast.error('Failed to delete milestone');
+    }
+  };
+
+  const timeline = calculateTimelineProgress(projectDates.start_date, projectDates.end_date);
+  
+  return (
+    <div className="space-y-6">
+      {/* Project Date Management */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Project Timeline Settings</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="start-date">Start Date</Label>
+            <Input
+              id="start-date"
+              type="date"
+              value={projectDates.start_date}
+              onChange={(e) => setProjectDates({ ...projectDates, start_date: e.target.value })}
+              data-testid="timeline-start-date"
+            />
+          </div>
+          <div>
+            <Label htmlFor="end-date">End Date</Label>
+            <Input
+              id="end-date"
+              type="date"
+              value={projectDates.end_date}
+              onChange={(e) => setProjectDates({ ...projectDates, end_date: e.target.value })}
+              data-testid="timeline-end-date"
+            />
+          </div>
+        </div>
+
+        <Button 
+          onClick={handleUpdateProjectDates} 
+          disabled={loading}
+          data-testid="update-timeline-btn"
+        >
+          {loading ? 'Updating...' : 'Update Project Timeline'}
+        </Button>
+
+        {/* Current Timeline Status */}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h4 className="font-medium mb-2">Current Timeline Status</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Progress</span>
+              <span className="font-medium">{timeline.progressPercentage}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full ${
+                  timeline.isOverdue ? 'bg-red-500' :
+                  timeline.isDangerZone ? 'bg-orange-500' :
+                  timeline.progressPercentage >= 75 ? 'bg-green-500' :
+                  timeline.progressPercentage >= 50 ? 'bg-blue-500' :
+                  'bg-gray-400'
+                }`}
+                style={{ width: `${Math.min(timeline.progressPercentage, 100)}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>Total: {timeline.daysTotal} days</span>
+              <span className={timeline.isOverdue ? 'text-red-600 font-medium' : ''}>
+                {timeline.isOverdue ? 
+                  `${timeline.daysOverdue} days overdue` :
+                  `${timeline.daysRemaining} days remaining`
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Timeline Milestones */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Timeline Milestones</h3>
+        
+        {/* Add New Milestone */}
+        <div className="border rounded-lg p-4 bg-blue-50">
+          <h4 className="font-medium mb-3">Add Timeline Milestone</h4>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="milestone-title">Milestone Title</Label>
+              <Input
+                id="milestone-title"
+                value={newMilestone.title}
+                onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                placeholder="e.g., Design Phase Complete, Testing Phase Start"
+                data-testid="milestone-title-input"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="milestone-date">Target Date</Label>
+              <Input
+                id="milestone-date"
+                type="date"
+                value={newMilestone.due_date}
+                onChange={(e) => setNewMilestone({ ...newMilestone, due_date: e.target.value })}
+                min={projectDates.start_date}
+                max={projectDates.end_date}
+                data-testid="milestone-date-input"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="milestone-description">Description (Optional)</Label>
+              <Textarea
+                id="milestone-description"
+                value={newMilestone.description}
+                onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                placeholder="Additional details about this milestone"
+                rows={2}
+              />
+            </div>
+            
+            <Button onClick={handleAddMilestone} data-testid="add-milestone-btn">
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Milestone
+            </Button>
+          </div>
+        </div>
+
+        {/* Existing Milestones */}
+        <div className="space-y-3">
+          {timelineMilestones.length > 0 ? (
+            timelineMilestones
+              .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
+              .map((milestone) => {
+                const milestoneDate = new Date(milestone.due_date);
+                const isOverdue = milestoneDate < new Date() && !milestone.completed;
+                
+                return (
+                  <div 
+                    key={milestone.id} 
+                    className={`flex items-center justify-between p-4 border rounded-lg ${
+                      milestone.completed ? 'bg-green-50 border-green-200' : 
+                      isOverdue ? 'bg-red-50 border-red-200' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <h4 className={`font-medium ${milestone.completed ? 'line-through text-gray-600' : ''}`}>
+                        {milestone.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Target: {formatDate(milestone.due_date)}
+                        {isOverdue && !milestone.completed && (
+                          <span className="text-red-600 font-medium ml-2">• Overdue</span>
+                        )}
+                        {milestone.completed && milestone.completed_date && (
+                          <span className="text-green-600 ml-2">• Completed {formatDate(milestone.completed_date)}</span>
+                        )}
+                      </p>
+                      {milestone.description && (
+                        <p className="text-sm text-gray-500 mt-1">{milestone.description}</p>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {!milestone.completed && (
+                        <Button 
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await axios.put(`${API}/milestones/${milestone.id}/complete`);
+                              fetchTimelineMilestones();
+                              toast.success('Milestone completed!');
+                            } catch (error) {
+                              toast.error('Failed to complete milestone');
+                            }
+                          }}
+                          data-testid={`complete-timeline-milestone-${milestone.id}`}
+                        >
+                          <CheckCircleIcon className="h-4 w-4 mr-1" />
+                          Complete
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDeleteMilestone(milestone.id)}
+                        className="text-red-600 hover:text-red-800"
+                        data-testid={`delete-timeline-milestone-${milestone.id}`}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              <CalendarIcon className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+              <p>No timeline milestones yet</p>
+              <p className="text-sm">Add milestones to track progress along your project timeline</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={onClose}>
+          Close Timeline Manager
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 // Project Detail Component
 const ProjectDetail = ({ project, onBack }) => {
   const [resources, setResources] = useState([]);
@@ -777,6 +1070,7 @@ const ProjectDetail = ({ project, onBack }) => {
   const [editingResource, setEditingResource] = useState(null);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [showTimelineManager, setShowTimelineManager] = useState(false);
 
   useEffect(() => {
     if (project) {
