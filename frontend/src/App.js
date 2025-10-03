@@ -1285,6 +1285,21 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     }
   };
 
+  const handleMilestoneUpdate = async () => {
+    // Refresh milestones data when updated from timeline manager
+    try {
+      const [milestonesRes] = await Promise.all([
+        axios.get(`${API}/projects/${project.id}/milestones`)
+      ]);
+      setMilestones(milestonesRes.data);
+      
+      // Also refresh other data to update progress calculations
+      fetchProjectData();
+    } catch (error) {
+      console.error('Error refreshing milestones:', error);
+    }
+  };
+
   if (!project) return null;
 
   return (
