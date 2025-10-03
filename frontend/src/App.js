@@ -816,9 +816,13 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
       };
       
       const response = await axios.post(`${API}/milestones`, milestoneData);
-      setTimelineMilestones([...timelineMilestones, response.data]);
       setNewMilestone({ title: '', due_date: '', description: '' });
       toast.success('Timeline milestone added successfully!');
+      
+      // Update milestones in parent component
+      if (onMilestoneUpdate) {
+        onMilestoneUpdate();
+      }
     } catch (error) {
       console.error('Error adding milestone:', error);
       toast.error('Failed to add milestone');
