@@ -411,7 +411,7 @@ const MilestoneDetailEdit = ({ milestone, projectId, projectStartDate, projectEn
         title: formData.title,
         due_date: new Date(formData.due_date).toISOString(),
         description: formData.description,
-        assigned_resource_id: formData.assigned_resource_id || null
+        assigned_resource_id: formData.assigned_resource_id === 'none' || !formData.assigned_resource_id ? null : formData.assigned_resource_id
       };
       
       if (milestone) {
