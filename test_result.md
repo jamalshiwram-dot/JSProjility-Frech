@@ -227,8 +227,6 @@ test_plan:
     - "Resource assignment in milestone editing"
   stuck_tasks:
     - "Resource dropdown in resource form"
-    - "Milestone editing from Milestones tab"
-    - "Milestone editing from Timeline Manager"
   test_all: false
   test_priority: "stuck_first"
 
