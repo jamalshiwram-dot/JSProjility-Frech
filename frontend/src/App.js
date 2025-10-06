@@ -2373,38 +2373,72 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {milestones && milestones.length > 0 ? milestones.map((milestone) => (
-                  <div key={milestone.id} className={`flex items-center justify-between p-4 border rounded-lg ${
-                    milestone.completed ? 'bg-green-50 border-green-200' : 'bg-white'
-                  }`}>
-                    <div className="flex items-center space-x-3">
-                      {milestone.completed ? (
-                        <CheckCircleIcon className="h-6 w-6 text-green-600" />
-                      ) : (
-                        <ClockIcon className="h-6 w-6 text-gray-400" />
-                      )}
-                      <div>
-                        <h4 className={`font-medium ${
-                          milestone.completed ? 'line-through text-gray-600' : ''
-                        }`}>{milestone.title}</h4>
-                        <p className="text-sm text-gray-600">{milestone.description}</p>
-                        <p className="text-sm text-gray-600">Due: {formatDate(milestone.due_date)}</p>
-                        {milestone.completed && milestone.completed_date && (
-                          <p className="text-sm text-green-600">Completed: {formatDate(milestone.completed_date)}</p>
+                {milestones && milestones.length > 0 ? milestones.map((milestone) => {
+                  const assignedResource = resources?.find(r => r.id === milestone.assigned_resource_id);
+                  
+                  return (
+                    <div 
+                      key={milestone.id} 
+                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
+                        milestone.completed ? 'bg-green-50 border-green-200' : 'bg-white'
+                      }`}
+                      onClick={() => handleMilestoneClick(milestone)}
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        {milestone.completed ? (
+                          <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                        ) : (
+                          <ClockIcon className="h-6 w-6 text-gray-400" />
+                        )}
+                        <div className="flex-1">
+                          <h4 className={`font-medium ${
+                            milestone.completed ? 'line-through text-gray-600' : ''
+                          }`}>{milestone.title}</h4>
+                          {milestone.description && (
+                            <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+                          )}
+                          <div className="flex items-center space-x-4 mt-1">
+                            <p className="text-sm text-gray-600">Due: {formatDate(milestone.due_date)}</p>
+                            {assignedResource && (
+                              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                👤 {assignedResource.name}
+                              </Badge>
+                            )}
+                          </div>
+                          {milestone.completed && milestone.completed_date && (
+                            <p className="text-sm text-green-600 mt-1">Completed: {formatDate(milestone.completed_date)}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMilestoneEdit(milestone);
+                          }}
+                          data-testid={`edit-milestone-${milestone.id}`}
+                        >
+                          Edit
+                        </Button>
+                        {!milestone.completed && (
+                          <Button 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              completeMilestone(milestone.id);
+                            }}
+                            data-testid={`complete-milestone-${milestone.id}`}
+                          >
+                            Complete
+                          </Button>
                         )}
                       </div>
                     </div>
-                    {!milestone.completed && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => completeMilestone(milestone.id)}
-                        data-testid={`complete-milestone-${milestone.id}`}
-                      >
-                        Complete
-                      </Button>
-                    )}
-                  </div>
-                )) : (
+                  );
+                }) : (
                   <div className="text-center py-8">
                     <TargetIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 mb-4">No milestones defined for this project</p>
