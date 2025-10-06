@@ -2493,6 +2493,9 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
       });
     } else if (filters.status === 'closed') {
       filtered = filtered.filter(p => p.stage === 'closed');
+    } else if (filters.status === 'expenses') {
+      // For expenses view, default to budget sorting high to low
+      setFilters(prev => ({ ...prev, budgetSort: 'desc' }));
     }
 
     // Search filter
