@@ -2469,6 +2469,24 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Close Project Confirmation Dialog */}
+      <AlertDialog open={showCloseConfirmation} onOpenChange={setShowCloseConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to close this project? Once closed, the project will be moved to the closed projects list and marked as completed. This action can be reversed by changing the project stage back to an active status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelClose}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCloseConfirmation}>
+              Yes, Close Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
