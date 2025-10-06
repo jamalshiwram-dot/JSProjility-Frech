@@ -262,9 +262,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Bidirectional sync between milestones and timeline"
-    - "Milestone completion functionality"
-    - "Form validation and date constraints"
+    - "Clickable dashboard cards navigation"
+    - "Project list page with filtering"
+    - "Cards and table view toggle"
+    - "Search functionality"
+    - "Budget sorting functionality"
+    - "Date filtering functionality"
+    - "Resource type filtering"
+    - "Navigation flow and back buttons"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
