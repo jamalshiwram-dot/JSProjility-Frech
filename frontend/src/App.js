@@ -1667,6 +1667,20 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
                     </div>
                     
                     <div className="flex items-center space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          // Open milestone edit dialog from timeline
+                          if (onMilestoneEdit) {
+                            onMilestoneEdit(milestone);
+                          }
+                        }}
+                        data-testid={`edit-timeline-milestone-${milestone.id}`}
+                      >
+                        Edit
+                      </Button>
+                      
                       {!milestone.completed && (
                         <Button 
                           size="sm"
