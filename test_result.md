@@ -168,6 +168,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "FIXED! Issue was empty string value in SelectItem for resource assignment. Changed from value='' to value='none' and updated form handling. Milestone edit dialog now opens correctly with all fields working."
+      - working: true
+        agent: "testing"
+        comment: "✅ MILESTONE EDIT FROM MILESTONES TAB WORKING: Successfully tested milestone edit functionality from Milestones tab. Edit dialog opens correctly without errors. All form fields (title, due date, description) are functional and editable. Resource assignment dropdown is present and working with 'No resource assigned' default option. The critical SelectItem empty string issue has been resolved."
 
   - task: "Milestone editing from Timeline Manager"
     implemented: true
