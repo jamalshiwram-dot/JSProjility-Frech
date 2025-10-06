@@ -65,6 +65,16 @@ const formatDate = (dateString) => {
   });
 };
 
+// Helper function to format date as mm/dd/yy
+const formatDateShort = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit'
+  });
+};
+
 // Helper function to calculate timeline progress
 const calculateTimelineProgress = (startDate, endDate) => {
   const start = new Date(startDate);
