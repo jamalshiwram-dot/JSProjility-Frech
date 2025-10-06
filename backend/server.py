@@ -137,6 +137,7 @@ class Milestone(BaseModel):
     project_id: str
     completed: bool = False
     completed_date: Optional[datetime] = None
+    assigned_resource_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MilestoneCreate(BaseModel):
@@ -144,6 +145,13 @@ class MilestoneCreate(BaseModel):
     description: Optional[str] = None
     due_date: datetime
     project_id: str
+    assigned_resource_id: Optional[str] = None
+
+class MilestoneUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    assigned_resource_id: Optional[str] = None
 
 class Expense(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -406,6 +414,31 @@ async def complete_milestone(milestone_id: str):
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Milestone not found")
     return {"message": "Milestone completed"}
+
+@api_router.put("/milestones/{milestone_id}", response_model=Milestone)
+async def update_milestone(milestone_id: str, milestone_update: MilestoneUpdate):
+    # Get existing milestone
+    existing_milestone = await db.milestones.find_one({"id": milestone_id})
+    if not existing_milestone:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    
+    # Prepare update data
+    update_data = {k: v for k, v in milestone_update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    # Update milestone
+    prepared_data = prepare_for_mongo(update_data)
+    result = await db.milestones.update_one(
+        {"id": milestone_id}, 
+        {"$set": prepared_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    
+    # Get updated milestone
+    updated_milestone = await db.milestones.find_one({"id": milestone_id})
+    return Milestone(**parse_from_mongo(updated_milestone))
 
 @api_router.delete("/milestones/{milestone_id}")
 async def delete_milestone(milestone_id: str):

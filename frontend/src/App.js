@@ -34,10 +34,18 @@ import {
   BarChart3Icon,
   TargetIcon,
   EditIcon,
-  TrashIcon
+  TrashIcon,
+  FilterIcon,
+  SortAscIcon,
+  SortDescIcon,
+  GridIcon,
+  TableIcon,
+  SearchIcon,
+  ArrowLeftIcon,
+  RefreshCwIcon
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://pmcentral-1.preview.emergentagent.com';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://pm-dashboard-5.preview.emergentagent.com';
 const API = `${BACKEND_URL}/api`;
 
 // Helper function to format currency
@@ -54,6 +62,16 @@ const formatDate = (dateString) => {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
+  });
+};
+
+// Helper function to format date as mm/dd/yy
+const formatDateShort = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit'
   });
 };
 
@@ -119,7 +137,7 @@ const PROJECT_STAGES = [
 ];
 
 // Dashboard Component
-const Dashboard = ({ projects, onProjectSelect }) => {
+const Dashboard = ({ projects, onProjectSelect, onViewProjects }) => {
   const [stats, setStats] = useState({
     total_projects: 0,
     active_projects: 0,
@@ -152,37 +170,40 @@ const Dashboard = ({ projects, onProjectSelect }) => {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('all')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
             <FolderIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total_projects}</div>
+            <p className="text-xs text-muted-foreground mt-1">Click to view all projects</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('active')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
             <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.active_projects}</div>
+            <p className="text-xs text-muted-foreground mt-1">Click to view active projects</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('expenses')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
             <DollarSignIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(stats.total_expenses)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Click to view by expenses</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('risk')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Projects at Risk</CardTitle>
             <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
@@ -199,6 +220,7 @@ const Dashboard = ({ projects, onProjectSelect }) => {
                   {timelineStats.dangerZone > 0 && `${timelineStats.dangerZone} near deadline`}
                 </div>
               )}
+              <p className="text-xs text-muted-foreground mt-1">Click to view at-risk projects</p>
             </div>
           </CardContent>
         </Card>
@@ -382,7 +404,257 @@ const ProjectForm = ({ onProjectCreated, onClose }) => {
   );
 };
 
-// Milestone Form Component
+// Milestone Detail/Edit Component
+const MilestoneDetailEdit = ({ milestone, projectId, projectStartDate, projectEndDate, projectResources, onMilestoneUpdated, onClose, isEditing = false }) => {
+  const [editMode, setEditMode] = useState(isEditing);
+  const [formData, setFormData] = useState({
+    title: milestone?.title || '',
+    due_date: milestone?.due_date ? new Date(milestone.due_date).toISOString().split('T')[0] : '',
+    description: milestone?.description || '',
+    assigned_resource_id: milestone?.assigned_resource_id || 'none'
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      // Validate milestone date is within project timeline
+      const milestoneDate = new Date(formData.due_date);
+      const startDate = new Date(projectStartDate);
+      const endDate = new Date(projectEndDate);
+      
+      if (milestoneDate < startDate || milestoneDate > endDate) {
+        toast.error(`Milestone date must be between ${formatDate(projectStartDate)} and ${formatDate(projectEndDate)}`);
+        setLoading(false);
+        return;
+      }
+      
+      const updateData = {
+        title: formData.title,
+        due_date: new Date(formData.due_date).toISOString(),
+        description: formData.description,
+        assigned_resource_id: formData.assigned_resource_id === 'none' || !formData.assigned_resource_id ? null : formData.assigned_resource_id
+      };
+      
+      if (milestone) {
+        // Update existing milestone
+        await axios.put(`${API}/milestones/${milestone.id}`, updateData);
+        toast.success('Milestone updated successfully!');
+      } else {
+        // Create new milestone
+        const milestoneData = {
+          ...updateData,
+          project_id: projectId
+        };
+        await axios.post(`${API}/milestones`, milestoneData);
+        toast.success('Milestone created successfully!');
+      }
+      
+      onMilestoneUpdated();
+      onClose();
+    } catch (error) {
+      console.error('Error saving milestone:', error);
+      toast.error('Failed to save milestone');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this milestone?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/milestones/${milestone.id}`);
+      toast.success('Milestone deleted successfully!');
+      onMilestoneUpdated();
+      onClose();
+    } catch (error) {
+      console.error('Error deleting milestone:', error);
+      toast.error('Failed to delete milestone');
+    }
+  };
+
+  const assignedResource = projectResources?.find(r => r.id === formData.assigned_resource_id && formData.assigned_resource_id !== 'none');
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-semibold">
+            {milestone ? (editMode ? 'Edit Milestone' : 'Milestone Details') : 'Create Milestone'}
+          </h3>
+          {milestone && !editMode && (
+            <p className="text-sm text-gray-600 mt-1">
+              Status: {milestone.completed ? (
+                <span className="text-green-600 font-medium">✅ Completed {milestone.completed_date ? formatDate(milestone.completed_date) : ''}</span>
+              ) : (
+                <span className="text-orange-600 font-medium">⏳ In Progress</span>
+              )}
+            </p>
+          )}
+        </div>
+        
+        {milestone && !editMode && (
+          <div className="flex space-x-2">
+            <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+              Edit
+            </Button>
+            {!milestone.completed && (
+              <Button 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await axios.put(`${API}/milestones/${milestone.id}/complete`);
+                    toast.success('Milestone completed!');
+                    onMilestoneUpdated();
+                  } catch (error) {
+                    toast.error('Failed to complete milestone');
+                  }
+                }}
+              >
+                Mark Complete
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      {editMode || !milestone ? (
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="milestone-title">Milestone Title</Label>
+            <Input
+              id="milestone-title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+              placeholder="e.g., Design Phase Complete"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="milestone-due-date">Due Date</Label>
+            <Input
+              id="milestone-due-date"
+              type="date"
+              value={formData.due_date}
+              onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+              min={projectStartDate ? new Date(projectStartDate).toISOString().split('T')[0] : ''}
+              max={projectEndDate ? new Date(projectEndDate).toISOString().split('T')[0] : ''}
+              required
+            />
+            <p className="text-xs text-gray-600 mt-1">
+              Must be between {formatDate(projectStartDate)} and {formatDate(projectEndDate)}
+            </p>
+          </div>
+          
+          <div>
+            <Label htmlFor="milestone-description">Description</Label>
+            <Textarea
+              id="milestone-description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Additional details about this milestone"
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="assigned-resource">Assign Resource (Optional)</Label>
+            <Select 
+              value={formData.assigned_resource_id} 
+              onValueChange={(value) => setFormData({ ...formData, assigned_resource_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a resource (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No resource assigned</SelectItem>
+                {projectResources?.map((resource) => (
+                  <SelectItem key={resource.id} value={resource.id}>
+                    {resource.name} ({resource.type.replace('_', ' ')})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {assignedResource && (
+              <p className="text-sm text-blue-600 mt-1">
+                📎 Assigned to: {assignedResource.name} ({assignedResource.type.replace('_', ' ')})
+              </p>
+            )}
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => editMode ? setEditMode(false) : onClose()}
+            >
+              Cancel
+            </Button>
+            {milestone && editMode && (
+              <Button 
+                variant="outline"
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-800"
+              >
+                Delete
+              </Button>
+            )}
+            <Button onClick={handleSave} disabled={loading}>
+              {loading ? 'Saving...' : milestone ? 'Save Changes' : 'Create Milestone'}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <Label>Title</Label>
+            <p className="font-medium">{milestone.title}</p>
+          </div>
+          
+          <div>
+            <Label>Due Date</Label>
+            <p>{formatDate(milestone.due_date)}</p>
+          </div>
+          
+          {milestone.description && (
+            <div>
+              <Label>Description</Label>
+              <p>{milestone.description}</p>
+            </div>
+          )}
+
+          {assignedResource && (
+            <div>
+              <Label>Assigned Resource</Label>
+              <div className="flex items-center space-x-2 mt-1">
+                <Badge className="bg-blue-100 text-blue-800">
+                  {assignedResource.name}
+                </Badge>
+                <span className="text-sm text-gray-600">
+                  ({assignedResource.type.replace('_', ' ')})
+                </span>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Milestone Form Component (Simplified for quick add)
 const MilestoneForm = ({ projectId, projectStartDate, projectEndDate, onMilestoneCreated, onClose }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -863,7 +1135,7 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource =
 };
 
 // Timeline Management Component
-const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMilestoneUpdate }) => {
+const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMilestoneUpdate, onMilestoneEdit }) => {
   const [projectDates, setProjectDates] = useState({
     start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
     end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : ''
@@ -1167,6 +1439,20 @@ const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMi
                     </div>
                     
                     <div className="flex items-center space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          // Open milestone edit dialog from timeline
+                          if (onMilestoneEdit) {
+                            onMilestoneEdit(milestone);
+                          }
+                        }}
+                        data-testid={`edit-timeline-milestone-${milestone.id}`}
+                      >
+                        Edit
+                      </Button>
+                      
                       {!milestone.completed && (
                         <Button 
                           size="sm"
@@ -1236,6 +1522,9 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [showTimelineManager, setShowTimelineManager] = useState(false);
   const [showAddMilestone, setShowAddMilestone] = useState(false);
+  const [showMilestoneDetail, setShowMilestoneDetail] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
+  const [milestoneEditMode, setMilestoneEditMode] = useState(false);
 
   useEffect(() => {
     if (project) {
@@ -1441,6 +1730,26 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     setShowAddMilestone(false);
     // Refresh project data to update progress calculations
     fetchProjectData();
+  };
+
+  const handleMilestoneClick = (milestone) => {
+    setSelectedMilestone(milestone);
+    setMilestoneEditMode(false);
+    setShowMilestoneDetail(true);
+  };
+
+  const handleMilestoneEdit = (milestone) => {
+    setSelectedMilestone(milestone);
+    setMilestoneEditMode(true);
+    setShowMilestoneDetail(true);
+  };
+
+  const handleMilestoneDetailUpdated = async () => {
+    // Refresh milestones and close dialog
+    await handleMilestoneUpdate();
+    setShowMilestoneDetail(false);
+    setSelectedMilestone(null);
+    setMilestoneEditMode(false);
   };
 
   if (!project) return null;
@@ -1850,38 +2159,72 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {milestones && milestones.length > 0 ? milestones.map((milestone) => (
-                  <div key={milestone.id} className={`flex items-center justify-between p-4 border rounded-lg ${
-                    milestone.completed ? 'bg-green-50 border-green-200' : 'bg-white'
-                  }`}>
-                    <div className="flex items-center space-x-3">
-                      {milestone.completed ? (
-                        <CheckCircleIcon className="h-6 w-6 text-green-600" />
-                      ) : (
-                        <ClockIcon className="h-6 w-6 text-gray-400" />
-                      )}
-                      <div>
-                        <h4 className={`font-medium ${
-                          milestone.completed ? 'line-through text-gray-600' : ''
-                        }`}>{milestone.title}</h4>
-                        <p className="text-sm text-gray-600">{milestone.description}</p>
-                        <p className="text-sm text-gray-600">Due: {formatDate(milestone.due_date)}</p>
-                        {milestone.completed && milestone.completed_date && (
-                          <p className="text-sm text-green-600">Completed: {formatDate(milestone.completed_date)}</p>
+                {milestones && milestones.length > 0 ? milestones.map((milestone) => {
+                  const assignedResource = resources?.find(r => r.id === milestone.assigned_resource_id);
+                  
+                  return (
+                    <div 
+                      key={milestone.id} 
+                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
+                        milestone.completed ? 'bg-green-50 border-green-200' : 'bg-white'
+                      }`}
+                      onClick={() => handleMilestoneClick(milestone)}
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        {milestone.completed ? (
+                          <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                        ) : (
+                          <ClockIcon className="h-6 w-6 text-gray-400" />
+                        )}
+                        <div className="flex-1">
+                          <h4 className={`font-medium ${
+                            milestone.completed ? 'line-through text-gray-600' : ''
+                          }`}>{milestone.title}</h4>
+                          {milestone.description && (
+                            <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+                          )}
+                          <div className="flex items-center space-x-4 mt-1">
+                            <p className="text-sm text-gray-600">Due: {formatDate(milestone.due_date)}</p>
+                            {assignedResource && (
+                              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                👤 {assignedResource.name}
+                              </Badge>
+                            )}
+                          </div>
+                          {milestone.completed && milestone.completed_date && (
+                            <p className="text-sm text-green-600 mt-1">Completed: {formatDate(milestone.completed_date)}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMilestoneEdit(milestone);
+                          }}
+                          data-testid={`edit-milestone-${milestone.id}`}
+                        >
+                          Edit
+                        </Button>
+                        {!milestone.completed && (
+                          <Button 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              completeMilestone(milestone.id);
+                            }}
+                            data-testid={`complete-milestone-${milestone.id}`}
+                          >
+                            Complete
+                          </Button>
                         )}
                       </div>
                     </div>
-                    {!milestone.completed && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => completeMilestone(milestone.id)}
-                        data-testid={`complete-milestone-${milestone.id}`}
-                      >
-                        Complete
-                      </Button>
-                    )}
-                  </div>
-                )) : (
+                  );
+                }) : (
                   <div className="text-center py-8">
                     <TargetIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 mb-4">No milestones defined for this project</p>
@@ -2058,9 +2401,452 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
             onClose={() => setShowTimelineManager(false)}
             milestones={milestones}
             onMilestoneUpdate={handleMilestoneUpdate}
+            onMilestoneEdit={handleMilestoneEdit}
           />
         </DialogContent>
       </Dialog>
+
+      {/* Milestone Detail/Edit Dialog */}
+      <Dialog open={showMilestoneDetail} onOpenChange={setShowMilestoneDetail}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedMilestone ? (milestoneEditMode ? 'Edit Milestone' : 'Milestone Details') : 'Create Milestone'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedMilestone ? (milestoneEditMode ? 'Update milestone information and assignments.' : 'View milestone details and manage assignments.') : 'Create a new milestone for this project.'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedMilestone && (
+            <MilestoneDetailEdit
+              milestone={selectedMilestone}
+              projectId={project.id}
+              projectStartDate={project.start_date}
+              projectEndDate={project.end_date}
+              projectResources={resources}
+              onMilestoneUpdated={handleMilestoneDetailUpdated}
+              onClose={() => {
+                setShowMilestoneDetail(false);
+                setSelectedMilestone(null);
+                setMilestoneEditMode(false);
+              }}
+              isEditing={milestoneEditMode}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// Project List Component with Filtering
+const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect }) => {
+  const [filteredProjects, setFilteredProjects] = useState(projects);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
+  const [filters, setFilters] = useState({
+    search: '',
+    status: initialFilter, // 'all', 'active', 'risk', 'closed', 'expenses'
+    budgetSort: 'desc', // 'desc' (high to low), 'asc' (low to high)
+    dateFilter: 'all', // 'all', 'recent', 'range'
+    recentDays: 30,
+    dateRange: { start: '', end: '' },
+    resourceType: 'all', // 'all', 'team_member', 'vendor', 'equipment', 'material'
+    resourceId: 'all'
+  });
+  
+  const [allResources, setAllResources] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch all resources for filtering
+  useEffect(() => {
+    const fetchAllResources = async () => {
+      try {
+        const resourcePromises = projects.map(project => 
+          axios.get(`${API}/projects/${project.id}/resources`)
+        );
+        const resourceResponses = await Promise.all(resourcePromises);
+        
+        const allResourcesFlat = resourceResponses.flatMap(response => 
+          response.data.map(resource => ({
+            ...resource,
+            projectId: response.config.url.split('/')[5] // Extract project ID from URL
+          }))
+        );
+        
+        // Remove duplicates based on name and type
+        const uniqueResources = allResourcesFlat.filter((resource, index, self) => 
+          index === self.findIndex(r => r.name === resource.name && r.type === resource.type)
+        );
+        
+        setAllResources(uniqueResources);
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      }
+    };
+
+    if (projects.length > 0) {
+      fetchAllResources();
+    }
+  }, [projects]);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...projects];
+
+    // Status filter
+    if (filters.status === 'active') {
+      filtered = filtered.filter(p => p.stage !== 'closed');
+    } else if (filters.status === 'risk') {
+      filtered = filtered.filter(p => {
+        const timeline = calculateTimelineProgress(p.start_date, p.end_date);
+        return timeline.isOverdue || timeline.isDangerZone;
+      });
+    } else if (filters.status === 'closed') {
+      filtered = filtered.filter(p => p.stage === 'closed');
+    } else if (filters.status === 'expenses') {
+      // For expenses view, default to budget sorting high to low
+      setFilters(prev => ({ ...prev, budgetSort: 'desc' }));
+    }
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        p.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Date filter
+    if (filters.dateFilter === 'newest') {
+      // Sort by newest first (this will be handled by the sorting logic below)
+      // No filtering needed here, just sorting
+    } else if (filters.dateFilter === 'range' && filters.dateRange.start && filters.dateRange.end) {
+      const startDate = new Date(filters.dateRange.start);
+      const endDate = new Date(filters.dateRange.end);
+      filtered = filtered.filter(p => {
+        const projectEndDate = new Date(p.end_date);
+        return projectEndDate >= startDate && projectEndDate <= endDate;
+      });
+    }
+
+    // Resource filter
+    if (filters.resourceId && filters.resourceId !== 'all') {
+      // This would need to be implemented with resource data per project
+      // For now, we'll implement a basic version
+      filtered = filtered.filter(p => {
+        // This is a placeholder - in a real implementation, you'd fetch resources for each project
+        return true; // Keep all projects for now
+      });
+    }
+
+    // Budget sort
+    if (filters.budgetSort === 'desc') {
+      filtered.sort((a, b) => (b.budget || 0) - (a.budget || 0));
+    } else if (filters.budgetSort === 'asc') {
+      filtered.sort((a, b) => (a.budget || 0) - (b.budget || 0));
+    }
+
+    // Date sort - newest first
+    if (filters.dateFilter === 'newest') {
+      filtered.sort((a, b) => new Date(b.created_at || b.start_date) - new Date(a.created_at || a.start_date));
+    }
+
+    // Default sort by newest first if no specific sorting
+    if (filters.budgetSort !== 'desc' && filters.budgetSort !== 'asc' && filters.dateFilter !== 'newest') {
+      filtered.sort((a, b) => new Date(b.created_at || b.start_date) - new Date(a.created_at || a.start_date));
+    }
+
+    setFilteredProjects(filtered);
+  }, [projects, filters]);
+
+  const getFilterTitle = () => {
+    switch (filters.status) {
+      case 'active': return 'Active Projects';
+      case 'risk': return 'Projects at Risk';
+      case 'closed': return 'Closed Projects';
+      default: return 'All Projects';
+    }
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const renderProjectCard = (project) => {
+    const timeline = calculateTimelineProgress(project.start_date, project.end_date);
+    
+    return (
+      <Card 
+        key={project.id}
+        className="cursor-pointer hover:shadow-lg transition-shadow"
+        onClick={() => onProjectSelect(project)}
+      >
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <CardTitle className="text-lg font-semibold">{project.name}</CardTitle>
+              <CardDescription className="mt-1 text-sm text-gray-600">
+                {project.description}
+              </CardDescription>
+            </div>
+            <Badge className={getStageColor(project.stage)}>
+              {project.stage.charAt(0).toUpperCase() + project.stage.slice(1)}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Budget:</span>
+              <span className="font-medium">{formatCurrency(project.budget || 0)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Timeline:</span>
+              <span className="text-gray-900">
+                {formatDateShort(project.start_date)} - {formatDateShort(project.end_date)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Status:</span>
+              <span className={timeline.isOverdue || timeline.isDangerZone ? 'text-red-600 font-medium' : 'text-gray-900'}>
+                {timeline.isOverdue ? `${timeline.daysOverdue} days overdue` : `${timeline.daysRemaining} days left`}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Progress:</span>
+              <span className="text-gray-900">{timeline.progressPercentage}%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderProjectTable = (project) => {
+    const timeline = calculateTimelineProgress(project.start_date, project.end_date);
+    
+    return (
+      <tr 
+        key={project.id}
+        className="cursor-pointer hover:bg-gray-50 border-b"
+        onClick={() => onProjectSelect(project)}
+      >
+        <td className="px-6 py-4">
+          <div>
+            <div className="font-medium text-gray-900">{project.name}</div>
+            <div className="text-sm text-gray-600 truncate max-w-xs">{project.description}</div>
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <Badge className={getStageColor(project.stage)}>
+            {project.stage.charAt(0).toUpperCase() + project.stage.slice(1)}
+          </Badge>
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-900">
+          {formatCurrency(project.budget || 0)}
+        </td>
+        <td className="px-6 py-4 text-sm">
+          <span className={timeline.isOverdue || timeline.isDangerZone ? 'text-red-600 font-medium' : 'text-gray-900'}>
+            {timeline.isOverdue ? `${timeline.daysOverdue} days overdue` : `${timeline.daysRemaining} days left`}
+          </span>
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-900">
+          {timeline.progressPercentage}%
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-600">
+          {formatDate(project.start_date)} - {formatDate(project.end_date)}
+        </td>
+      </tr>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-900">{getFilterTitle()}</h1>
+          <Badge variant="outline" className="text-sm">
+            {filteredProjects.length} projects
+          </Badge>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button
+            variant={viewMode === 'cards' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('cards')}
+          >
+            <GridIcon className="h-4 w-4 mr-2" />
+            Cards
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+          >
+            <TableIcon className="h-4 w-4 mr-2" />
+            Table
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <FilterIcon className="h-5 w-5 mr-2" />
+            Filters & Sorting
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Search */}
+            <div>
+              <Label htmlFor="search">Search Projects</Label>
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="search"
+                  placeholder="Search by name or description"
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  <SelectItem value="active">Active Projects</SelectItem>
+                  <SelectItem value="risk">Projects at Risk</SelectItem>
+                  <SelectItem value="closed">Closed Projects</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Budget Sort */}
+            <div>
+              <Label htmlFor="budget-sort">Budget Sorting</Label>
+              <Select value={filters.budgetSort} onValueChange={(value) => handleFilterChange('budgetSort', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Highest to Lowest</SelectItem>
+                  <SelectItem value="asc">Lowest to Highest</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Filter */}
+            <div>
+              <Label htmlFor="date-filter">Date Filter</Label>
+              <Select value={filters.dateFilter} onValueChange={(value) => handleFilterChange('dateFilter', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Dates</SelectItem>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="range">Date Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Recent days input removed per user request */}
+
+            {/* Date Range */}
+            {filters.dateFilter === 'range' && (
+              <>
+                <div>
+                  <Label htmlFor="start-date">Start Date</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={filters.dateRange.start}
+                    onChange={(e) => handleFilterChange('dateRange', { ...filters.dateRange, start: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="end-date">End Date</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={filters.dateRange.end}
+                    onChange={(e) => handleFilterChange('dateRange', { ...filters.dateRange, end: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Resource filtering removed per user request */}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Project List */}
+      {viewMode === 'cards' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map(renderProjectCard)}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Budget
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Timeline
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Progress
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Duration
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProjects.map(renderProjectTable)}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {filteredProjects.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <FolderIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No projects found</h3>
+            <p className="text-gray-600">Try adjusting your filters to see more projects.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
@@ -2070,6 +2856,7 @@ function App() {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [projectListFilter, setProjectListFilter] = useState('all');
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -2106,6 +2893,11 @@ function App() {
     setCurrentView('dashboard');
   };
 
+  const handleViewProjects = (filter = 'all') => {
+    setProjectListFilter(filter);
+    setCurrentView('projects-list');
+  };
+
   const handleProjectUpdated = (updatedProject) => {
     // Update the project in the projects list
     setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
@@ -2135,7 +2927,7 @@ function App() {
               <h1 className="text-2xl font-bold text-gray-900">JS Projility</h1>
             </div>
             
-            {currentView === 'dashboard' && (
+            {currentView !== 'project-detail' && (
               <Dialog open={showCreateProject} onOpenChange={setShowCreateProject}>
                 <DialogTrigger asChild>
                   <Button data-testid="create-project-button">
@@ -2167,13 +2959,23 @@ function App() {
           <Dashboard 
             projects={projects} 
             onProjectSelect={handleProjectSelect}
+            onViewProjects={handleViewProjects}
+          />
+        )}
+        
+        {currentView === 'projects-list' && (
+          <ProjectList
+            projects={projects}
+            initialFilter={projectListFilter}
+            onBack={handleBackToDashboard}
+            onProjectSelect={handleProjectSelect}
           />
         )}
         
         {currentView === 'project-detail' && selectedProject && (
           <ProjectDetail 
             project={selectedProject} 
-            onBack={handleBackToDashboard}
+            onBack={() => setCurrentView(projectListFilter !== 'all' ? 'projects-list' : 'dashboard')}
             onProjectUpdated={handleProjectUpdated}
           />
         )}

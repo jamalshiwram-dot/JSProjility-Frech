@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 
 class ExpenseResourceTester:
-    def __init__(self, base_url="https://pmcentral-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://pm-dashboard-5.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
