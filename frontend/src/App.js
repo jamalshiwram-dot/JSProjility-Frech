@@ -2525,8 +2525,8 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
       const startDate = new Date(filters.dateRange.start);
       const endDate = new Date(filters.dateRange.end);
       filtered = filtered.filter(p => {
-        const projectDate = new Date(p.start_date);
-        return projectDate >= startDate && projectDate <= endDate;
+        const projectEndDate = new Date(p.end_date);
+        return projectEndDate >= startDate && projectEndDate <= endDate;
       });
     }
 
