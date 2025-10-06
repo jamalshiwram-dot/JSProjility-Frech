@@ -2786,44 +2786,7 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
               </>
             )}
 
-            {/* Resource Type Filter */}
-            <div>
-              <Label htmlFor="resource-type">Resource Type</Label>
-              <Select value={filters.resourceType} onValueChange={(value) => handleFilterChange('resourceType', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Resource Types</SelectItem>
-                  <SelectItem value="team_member">Team Members</SelectItem>
-                  <SelectItem value="vendor">Vendors</SelectItem>
-                  <SelectItem value="equipment">Equipment</SelectItem>
-                  <SelectItem value="material">Materials</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Specific Resource Filter */}
-            {filters.resourceType !== 'all' && (
-              <div>
-                <Label htmlFor="resource">Specific Resource</Label>
-                <Select value={filters.resourceId} onValueChange={(value) => handleFilterChange('resourceId', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select resource" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All {filters.resourceType.replace('_', ' ')}s</SelectItem>
-                    {allResources
-                      .filter(r => r.type === filters.resourceType)
-                      .map((resource) => (
-                        <SelectItem key={resource.id} value={resource.id}>
-                          {resource.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Resource filtering removed per user request */}
           </div>
         </CardContent>
       </Card>
