@@ -2713,7 +2713,6 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
                   <SelectItem value="all">All Projects</SelectItem>
                   <SelectItem value="active">Active Projects</SelectItem>
                   <SelectItem value="risk">Projects at Risk</SelectItem>
-                  <SelectItem value="expenses">Projects by Budget</SelectItem>
                   <SelectItem value="closed">Closed Projects</SelectItem>
                 </SelectContent>
               </Select>
