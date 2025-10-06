@@ -551,7 +551,7 @@ const MilestoneDetailEdit = ({ milestone, projectId, projectStartDate, projectEn
                 <SelectValue placeholder="Select a resource (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No resource assigned</SelectItem>
+                <SelectItem value="none">No resource assigned</SelectItem>
                 {projectResources?.map((resource) => (
                   <SelectItem key={resource.id} value={resource.id}>
                     {resource.name} ({resource.type.replace('_', ' ')})
