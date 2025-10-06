@@ -153,11 +153,11 @@ backend:
 frontend:
   - task: "Milestone editing from Milestones tab"
     implemented: true
-    working: false
+    working: true
     file: "frontend/src/App.js"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -165,14 +165,17 @@ frontend:
       - working: false
         agent: "user"
         comment: "User reports: When clicking edit button in milestones, an ERROR page comes up. Critical issue that needs immediate fixing."
+      - working: true
+        agent: "main"
+        comment: "FIXED! Issue was empty string value in SelectItem for resource assignment. Changed from value='' to value='none' and updated form handling. Milestone edit dialog now opens correctly with all fields working."
 
   - task: "Milestone editing from Timeline Manager"
     implemented: true
-    working: false
+    working: true
     file: "frontend/src/App.js"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -180,6 +183,9 @@ frontend:
       - working: false
         agent: "user"
         comment: "User reports: When clicking edit button in timeline view for milestones, an ERROR page comes up. Critical issue that needs immediate fixing."
+      - working: true
+        agent: "main"
+        comment: "FIXED! Same issue as milestones tab - empty string value in SelectItem. Fixed by changing to value='none'. Timeline milestone editing now works correctly."
 
   - task: "Resource dropdown in resource form"
     implemented: true
