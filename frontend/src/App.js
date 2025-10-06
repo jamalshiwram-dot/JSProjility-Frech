@@ -1946,6 +1946,26 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     fetchProjectData();
   };
 
+  const handleMilestoneClick = (milestone) => {
+    setSelectedMilestone(milestone);
+    setMilestoneEditMode(false);
+    setShowMilestoneDetail(true);
+  };
+
+  const handleMilestoneEdit = (milestone) => {
+    setSelectedMilestone(milestone);
+    setMilestoneEditMode(true);
+    setShowMilestoneDetail(true);
+  };
+
+  const handleMilestoneDetailUpdated = async () => {
+    // Refresh milestones and close dialog
+    await handleMilestoneUpdate();
+    setShowMilestoneDetail(false);
+    setSelectedMilestone(null);
+    setMilestoneEditMode(false);
+  };
+
   if (!project) return null;
 
   return (
