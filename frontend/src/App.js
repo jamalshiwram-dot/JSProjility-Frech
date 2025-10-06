@@ -2960,7 +2960,7 @@ function App() {
               <h1 className="text-2xl font-bold text-gray-900">JS Projility</h1>
             </div>
             
-            {currentView === 'dashboard' && (
+            {currentView !== 'project-detail' && (
               <Dialog open={showCreateProject} onOpenChange={setShowCreateProject}>
                 <DialogTrigger asChild>
                   <Button data-testid="create-project-button">
