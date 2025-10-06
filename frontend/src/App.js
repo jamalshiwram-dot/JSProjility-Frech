@@ -127,7 +127,7 @@ const PROJECT_STAGES = [
 ];
 
 // Dashboard Component
-const Dashboard = ({ projects, onProjectSelect }) => {
+const Dashboard = ({ projects, onProjectSelect, onViewProjects }) => {
   const [stats, setStats] = useState({
     total_projects: 0,
     active_projects: 0,
