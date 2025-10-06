@@ -249,3 +249,5 @@ agent_communication:
     message: "Set up initial testing structure. Ready to test milestone management functionality and fix resource dropdown issue. Will start with backend testing first."
   - agent: "testing"
     message: "✅ BACKEND MILESTONE TESTING COMPLETE: All core milestone functionality working perfectly! Tested 79 scenarios with 93.7% success rate. All CRUD operations, resource assignments, and data persistence working correctly. Found 5 minor validation issues (date validation, project existence validation) but these don't affect core functionality. Backend is production-ready for milestone management. Only frontend testing remains for UI components."
+  - agent: "main"
+    message: "✅ CRITICAL MILESTONE EDIT BUG FIXED: Found and resolved SelectItem empty string value error. Issue was in MilestoneDetailEdit component resource assignment dropdown using value='' which caused React error. Fixed by using value='none' and updating form handling logic. Both Milestones tab and Timeline Manager edit buttons now work correctly."
