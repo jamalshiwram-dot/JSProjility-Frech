@@ -2983,13 +2983,23 @@ function App() {
           <Dashboard 
             projects={projects} 
             onProjectSelect={handleProjectSelect}
+            onViewProjects={handleViewProjects}
+          />
+        )}
+        
+        {currentView === 'projects-list' && (
+          <ProjectList
+            projects={projects}
+            initialFilter={projectListFilter}
+            onBack={handleBackToDashboard}
+            onProjectSelect={handleProjectSelect}
           />
         )}
         
         {currentView === 'project-detail' && selectedProject && (
           <ProjectDetail 
             project={selectedProject} 
-            onBack={handleBackToDashboard}
+            onBack={() => setCurrentView(projectListFilter !== 'all' ? 'projects-list' : 'dashboard')}
             onProjectUpdated={handleProjectUpdated}
           />
         )}
