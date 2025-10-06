@@ -2751,20 +2751,7 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
               </Select>
             </div>
 
-            {/* Recent Days Input */}
-            {filters.dateFilter === 'recent' && (
-              <div>
-                <Label htmlFor="recent-days">Days Back</Label>
-                <Input
-                  id="recent-days"
-                  type="number"
-                  value={filters.recentDays}
-                  onChange={(e) => handleFilterChange('recentDays', parseInt(e.target.value) || 30)}
-                  min="1"
-                  max="365"
-                />
-              </div>
-            )}
+            {/* Recent days input removed per user request */}
 
             {/* Date Range */}
             {filters.dateFilter === 'range' && (
