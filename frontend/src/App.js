@@ -160,37 +160,40 @@ const Dashboard = ({ projects, onProjectSelect, onViewProjects }) => {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('all')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
             <FolderIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total_projects}</div>
+            <p className="text-xs text-muted-foreground mt-1">Click to view all projects</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('active')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
             <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.active_projects}</div>
+            <p className="text-xs text-muted-foreground mt-1">Click to view active projects</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('expenses')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
             <DollarSignIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(stats.total_expenses)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Click to view by expenses</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onViewProjects('risk')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Projects at Risk</CardTitle>
             <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
@@ -207,6 +210,7 @@ const Dashboard = ({ projects, onProjectSelect, onViewProjects }) => {
                   {timelineStats.dangerZone > 0 && `${timelineStats.dangerZone} near deadline`}
                 </div>
               )}
+              <p className="text-xs text-muted-foreground mt-1">Click to view at-risk projects</p>
             </div>
           </CardContent>
         </Card>
