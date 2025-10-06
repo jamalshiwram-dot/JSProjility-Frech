@@ -2435,7 +2435,7 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
   const [filters, setFilters] = useState({
     search: '',
-    status: initialFilter, // 'all', 'active', 'risk', 'closed'
+    status: initialFilter, // 'all', 'active', 'risk', 'closed', 'expenses'
     budgetSort: 'desc', // 'desc' (high to low), 'asc' (low to high)
     dateFilter: 'all', // 'all', 'recent', 'range'
     recentDays: 30,
