@@ -1576,6 +1576,18 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   };
 
   const updateProjectStage = async (newStage) => {
+    // If the new stage is "closed", show confirmation dialog
+    if (newStage === 'closed') {
+      setPendingStageChange(newStage);
+      setShowCloseConfirmation(true);
+      return;
+    }
+    
+    // For non-closed stages, proceed normally
+    await performStageUpdate(newStage);
+  };
+
+  const performStageUpdate = async (newStage) => {
     try {
       await axios.put(`${API}/projects/${project.id}/stage`, null, {
         params: { stage: newStage }
@@ -1585,10 +1597,29 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
       project.stage = newStage;
       // Refresh project data
       fetchProjectData();
+      // Call onProjectUpdated to refresh the parent's project list
+      if (onProjectUpdated) {
+        onProjectUpdated({ ...project, stage: newStage });
+      }
     } catch (error) {
       console.error('Error updating project stage:', error);
       toast.error('Failed to update project stage');
     }
+  };
+
+  const handleCloseConfirmation = async () => {
+    setShowCloseConfirmation(false);
+    if (pendingStageChange) {
+      await performStageUpdate(pendingStageChange);
+      setPendingStageChange(null);
+    }
+  };
+
+  const handleCancelClose = () => {
+    setShowCloseConfirmation(false);
+    setPendingStageChange(null);
+    // Reset the select to the current stage
+    // This is handled automatically by the Select component since we didn't update the project.stage
   };
 
   const handleResourceCreated = (newResource) => {
