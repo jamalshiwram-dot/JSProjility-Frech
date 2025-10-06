@@ -2814,7 +2814,7 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
                     <SelectValue placeholder="Select resource" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All {filters.resourceType.replace('_', ' ')}s</SelectItem>
+                    <SelectItem value="all">All {filters.resourceType.replace('_', ' ')}s</SelectItem>
                     {allResources
                       .filter(r => r.type === filters.resourceType)
                       .map((resource) => (
