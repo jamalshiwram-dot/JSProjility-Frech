@@ -2508,10 +2508,9 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
     }
 
     // Date filter
-    if (filters.dateFilter === 'recent') {
-      const recentDate = new Date();
-      recentDate.setDate(recentDate.getDate() - filters.recentDays);
-      filtered = filtered.filter(p => new Date(p.created_at || p.start_date) >= recentDate);
+    if (filters.dateFilter === 'newest') {
+      // Sort by newest first (this will be handled by the sorting logic below)
+      // No filtering needed here, just sorting
     } else if (filters.dateFilter === 'range' && filters.dateRange.start && filters.dateRange.end) {
       const startDate = new Date(filters.dateRange.start);
       const endDate = new Date(filters.dateRange.end);
