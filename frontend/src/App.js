@@ -2629,6 +2629,7 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
             onClose={() => setShowTimelineManager(false)}
             milestones={milestones}
             onMilestoneUpdate={handleMilestoneUpdate}
+            onMilestoneEdit={handleMilestoneEdit}
           />
         </DialogContent>
       </Dialog>
