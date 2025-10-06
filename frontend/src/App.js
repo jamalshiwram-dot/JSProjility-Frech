@@ -2565,7 +2565,6 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
       case 'active': return 'Active Projects';
       case 'risk': return 'Projects at Risk';
       case 'closed': return 'Closed Projects';
-      case 'expenses': return 'Projects by Budget';
       default: return 'All Projects';
     }
   };
