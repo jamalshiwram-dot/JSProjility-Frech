@@ -2441,7 +2441,7 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
     recentDays: 30,
     dateRange: { start: '', end: '' },
     resourceType: 'all', // 'all', 'team_member', 'vendor', 'equipment', 'material'
-    resourceId: ''
+    resourceId: 'all'
   });
   
   const [allResources, setAllResources] = useState([]);
