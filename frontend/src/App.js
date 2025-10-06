@@ -1363,7 +1363,7 @@ const ResourceForm = ({ projectId, onResourceCreated, onClose, editingResource =
 };
 
 // Timeline Management Component
-const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMilestoneUpdate }) => {
+const TimelineManager = ({ project, onTimelineUpdated, onClose, milestones, onMilestoneUpdate, onMilestoneEdit }) => {
   const [projectDates, setProjectDates] = useState({
     start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
     end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : ''
