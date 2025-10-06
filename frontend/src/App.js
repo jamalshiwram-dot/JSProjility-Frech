@@ -1526,6 +1526,8 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   const [showMilestoneDetail, setShowMilestoneDetail] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneEditMode, setMilestoneEditMode] = useState(false);
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [pendingStageChange, setPendingStageChange] = useState(null);
 
   useEffect(() => {
     if (project) {
