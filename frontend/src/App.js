@@ -389,7 +389,7 @@ const MilestoneDetailEdit = ({ milestone, projectId, projectStartDate, projectEn
     title: milestone?.title || '',
     due_date: milestone?.due_date ? new Date(milestone.due_date).toISOString().split('T')[0] : '',
     description: milestone?.description || '',
-    assigned_resource_id: milestone?.assigned_resource_id || ''
+    assigned_resource_id: milestone?.assigned_resource_id || 'none'
   });
   const [loading, setLoading] = useState(false);
 
