@@ -153,27 +153,33 @@ backend:
 frontend:
   - task: "Milestone editing from Milestones tab"
     implemented: true
-    working: "NA"
+    working: false
     file: "frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "MilestoneDetailEdit component implemented for editing milestones from Milestones tab."
+      - working: false
+        agent: "user"
+        comment: "User reports: When clicking edit button in milestones, an ERROR page comes up. Critical issue that needs immediate fixing."
 
   - task: "Milestone editing from Timeline Manager"
     implemented: true
-    working: "NA"
+    working: false
     file: "frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Timeline Manager includes edit buttons for milestones. Need to test functionality."
+      - working: false
+        agent: "user"
+        comment: "User reports: When clicking edit button in timeline view for milestones, an ERROR page comes up. Critical issue that needs immediate fixing."
 
   - task: "Resource dropdown in resource form"
     implemented: true
