@@ -2425,6 +2425,456 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   );
 };
 
+// Project List Component with Filtering
+const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect }) => {
+  const [filteredProjects, setFilteredProjects] = useState(projects);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
+  const [filters, setFilters] = useState({
+    search: '',
+    status: initialFilter, // 'all', 'active', 'risk', 'closed'
+    budgetSort: 'desc', // 'desc' (high to low), 'asc' (low to high)
+    dateFilter: 'all', // 'all', 'recent', 'range'
+    recentDays: 30,
+    dateRange: { start: '', end: '' },
+    resourceType: 'all', // 'all', 'team_member', 'vendor', 'equipment', 'material'
+    resourceId: ''
+  });
+  
+  const [allResources, setAllResources] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch all resources for filtering
+  useEffect(() => {
+    const fetchAllResources = async () => {
+      try {
+        const resourcePromises = projects.map(project => 
+          axios.get(`${API}/projects/${project.id}/resources`)
+        );
+        const resourceResponses = await Promise.all(resourcePromises);
+        
+        const allResourcesFlat = resourceResponses.flatMap(response => 
+          response.data.map(resource => ({
+            ...resource,
+            projectId: response.config.url.split('/')[5] // Extract project ID from URL
+          }))
+        );
+        
+        // Remove duplicates based on name and type
+        const uniqueResources = allResourcesFlat.filter((resource, index, self) => 
+          index === self.findIndex(r => r.name === resource.name && r.type === resource.type)
+        );
+        
+        setAllResources(uniqueResources);
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      }
+    };
+
+    if (projects.length > 0) {
+      fetchAllResources();
+    }
+  }, [projects]);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...projects];
+
+    // Status filter
+    if (filters.status === 'active') {
+      filtered = filtered.filter(p => p.stage !== 'closed');
+    } else if (filters.status === 'risk') {
+      filtered = filtered.filter(p => {
+        const timeline = calculateTimelineProgress(p.start_date, p.end_date);
+        return timeline.isOverdue || timeline.isDangerZone;
+      });
+    } else if (filters.status === 'closed') {
+      filtered = filtered.filter(p => p.stage === 'closed');
+    }
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        p.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Date filter
+    if (filters.dateFilter === 'recent') {
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - filters.recentDays);
+      filtered = filtered.filter(p => new Date(p.created_at || p.start_date) >= recentDate);
+    } else if (filters.dateFilter === 'range' && filters.dateRange.start && filters.dateRange.end) {
+      const startDate = new Date(filters.dateRange.start);
+      const endDate = new Date(filters.dateRange.end);
+      filtered = filtered.filter(p => {
+        const projectDate = new Date(p.start_date);
+        return projectDate >= startDate && projectDate <= endDate;
+      });
+    }
+
+    // Resource filter
+    if (filters.resourceId) {
+      // This would need to be implemented with resource data per project
+      // For now, we'll implement a basic version
+      filtered = filtered.filter(p => {
+        // This is a placeholder - in a real implementation, you'd fetch resources for each project
+        return true; // Keep all projects for now
+      });
+    }
+
+    // Budget sort
+    if (filters.budgetSort === 'desc') {
+      filtered.sort((a, b) => (b.budget || 0) - (a.budget || 0));
+    } else if (filters.budgetSort === 'asc') {
+      filtered.sort((a, b) => (a.budget || 0) - (b.budget || 0));
+    }
+
+    // Default sort by newest first if no budget sort
+    if (filters.budgetSort === 'none') {
+      filtered.sort((a, b) => new Date(b.created_at || b.start_date) - new Date(a.created_at || a.start_date));
+    }
+
+    setFilteredProjects(filtered);
+  }, [projects, filters]);
+
+  const getFilterTitle = () => {
+    switch (filters.status) {
+      case 'active': return 'Active Projects';
+      case 'risk': return 'Projects at Risk';
+      case 'closed': return 'Closed Projects';
+      default: return 'All Projects';
+    }
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const renderProjectCard = (project) => {
+    const timeline = calculateTimelineProgress(project.start_date, project.end_date);
+    
+    return (
+      <Card 
+        key={project.id}
+        className="cursor-pointer hover:shadow-lg transition-shadow"
+        onClick={() => onProjectSelect(project)}
+      >
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <CardTitle className="text-lg font-semibold">{project.name}</CardTitle>
+              <CardDescription className="mt-1 text-sm text-gray-600">
+                {project.description}
+              </CardDescription>
+            </div>
+            <Badge className={getStageColor(project.stage)}>
+              {project.stage.charAt(0).toUpperCase() + project.stage.slice(1)}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Budget:</span>
+              <span className="font-medium">{formatCurrency(project.budget || 0)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Timeline:</span>
+              <span className={timeline.isOverdue || timeline.isDangerZone ? 'text-red-600 font-medium' : 'text-gray-900'}>
+                {timeline.isOverdue ? `${timeline.daysOverdue} days overdue` : `${timeline.daysRemaining} days left`}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Progress:</span>
+              <span className="text-gray-900">{timeline.progressPercentage}%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderProjectTable = (project) => {
+    const timeline = calculateTimelineProgress(project.start_date, project.end_date);
+    
+    return (
+      <tr 
+        key={project.id}
+        className="cursor-pointer hover:bg-gray-50 border-b"
+        onClick={() => onProjectSelect(project)}
+      >
+        <td className="px-6 py-4">
+          <div>
+            <div className="font-medium text-gray-900">{project.name}</div>
+            <div className="text-sm text-gray-600 truncate max-w-xs">{project.description}</div>
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <Badge className={getStageColor(project.stage)}>
+            {project.stage.charAt(0).toUpperCase() + project.stage.slice(1)}
+          </Badge>
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-900">
+          {formatCurrency(project.budget || 0)}
+        </td>
+        <td className="px-6 py-4 text-sm">
+          <span className={timeline.isOverdue || timeline.isDangerZone ? 'text-red-600 font-medium' : 'text-gray-900'}>
+            {timeline.isOverdue ? `${timeline.daysOverdue} days overdue` : `${timeline.daysRemaining} days left`}
+          </span>
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-900">
+          {timeline.progressPercentage}%
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-600">
+          {formatDate(project.start_date)} - {formatDate(project.end_date)}
+        </td>
+      </tr>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-900">{getFilterTitle()}</h1>
+          <Badge variant="outline" className="text-sm">
+            {filteredProjects.length} projects
+          </Badge>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button
+            variant={viewMode === 'cards' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('cards')}
+          >
+            <GridIcon className="h-4 w-4 mr-2" />
+            Cards
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+          >
+            <TableIcon className="h-4 w-4 mr-2" />
+            Table
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <FilterIcon className="h-5 w-5 mr-2" />
+            Filters & Sorting
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div>
+              <Label htmlFor="search">Search Projects</Label>
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="search"
+                  placeholder="Search by name or description"
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  <SelectItem value="active">Active Projects</SelectItem>
+                  <SelectItem value="risk">Projects at Risk</SelectItem>
+                  <SelectItem value="closed">Closed Projects</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Budget Sort */}
+            <div>
+              <Label htmlFor="budget-sort">Budget Sorting</Label>
+              <Select value={filters.budgetSort} onValueChange={(value) => handleFilterChange('budgetSort', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Highest to Lowest</SelectItem>
+                  <SelectItem value="asc">Lowest to Highest</SelectItem>
+                  <SelectItem value="none">Newest First</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Filter */}
+            <div>
+              <Label htmlFor="date-filter">Date Filter</Label>
+              <Select value={filters.dateFilter} onValueChange={(value) => handleFilterChange('dateFilter', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Dates</SelectItem>
+                  <SelectItem value="recent">Recent Projects</SelectItem>
+                  <SelectItem value="range">Date Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Recent Days Input */}
+            {filters.dateFilter === 'recent' && (
+              <div>
+                <Label htmlFor="recent-days">Days Back</Label>
+                <Input
+                  id="recent-days"
+                  type="number"
+                  value={filters.recentDays}
+                  onChange={(e) => handleFilterChange('recentDays', parseInt(e.target.value) || 30)}
+                  min="1"
+                  max="365"
+                />
+              </div>
+            )}
+
+            {/* Date Range */}
+            {filters.dateFilter === 'range' && (
+              <>
+                <div>
+                  <Label htmlFor="start-date">Start Date</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={filters.dateRange.start}
+                    onChange={(e) => handleFilterChange('dateRange', { ...filters.dateRange, start: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="end-date">End Date</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={filters.dateRange.end}
+                    onChange={(e) => handleFilterChange('dateRange', { ...filters.dateRange, end: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Resource Type Filter */}
+            <div>
+              <Label htmlFor="resource-type">Resource Type</Label>
+              <Select value={filters.resourceType} onValueChange={(value) => handleFilterChange('resourceType', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Resource Types</SelectItem>
+                  <SelectItem value="team_member">Team Members</SelectItem>
+                  <SelectItem value="vendor">Vendors</SelectItem>
+                  <SelectItem value="equipment">Equipment</SelectItem>
+                  <SelectItem value="material">Materials</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Specific Resource Filter */}
+            {filters.resourceType !== 'all' && (
+              <div>
+                <Label htmlFor="resource">Specific Resource</Label>
+                <Select value={filters.resourceId} onValueChange={(value) => handleFilterChange('resourceId', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select resource" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All {filters.resourceType.replace('_', ' ')}s</SelectItem>
+                    {allResources
+                      .filter(r => r.type === filters.resourceType)
+                      .map((resource) => (
+                        <SelectItem key={resource.id} value={resource.id}>
+                          {resource.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Project List */}
+      {viewMode === 'cards' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map(renderProjectCard)}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Budget
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Timeline
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Progress
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Duration
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProjects.map(renderProjectTable)}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {filteredProjects.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <FolderIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No projects found</h3>
+            <p className="text-gray-600">Try adjusting your filters to see more projects.</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 // Main App Component
 function App() {
   const [projects, setProjects] = useState([]);
