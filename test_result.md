@@ -207,15 +207,18 @@ frontend:
 
   - task: "Resource assignment in milestone editing"
     implemented: true
-    working: "NA"
+    working: true
     file: "frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Resource assignment dropdown implemented in MilestoneDetailEdit component. Need to test functionality."
+      - working: true
+        agent: "testing"
+        comment: "✅ RESOURCE ASSIGNMENT WORKING: Successfully tested resource assignment in milestone editing. Dropdown shows 'No resource assigned' by default and opens correctly when clicked. Found 5 select-item elements in dropdown (including resources from Resources tab). Resource selection works properly. The SelectItem value='none' fix has resolved the dropdown functionality. Resources are properly loaded from the project's resource pool."
 
 metadata:
   created_by: "main_agent"
