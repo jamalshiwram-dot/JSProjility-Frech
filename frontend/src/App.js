@@ -34,7 +34,15 @@ import {
   BarChart3Icon,
   TargetIcon,
   EditIcon,
-  TrashIcon
+  TrashIcon,
+  FilterIcon,
+  SortAscIcon,
+  SortDescIcon,
+  GridIcon,
+  TableIcon,
+  SearchIcon,
+  ArrowLeftIcon,
+  RefreshCwIcon
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://pm-dashboard-5.preview.emergentagent.com';
