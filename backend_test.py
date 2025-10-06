@@ -252,16 +252,20 @@ class ProjectManagementAPITester:
         return len(self.created_resources['resources']) > 0
 
     def test_milestone_operations(self):
-        """Test milestone operations"""
+        """Test comprehensive milestone operations"""
         print("\n🔍 Testing Milestone Operations...")
         
         if not self.created_resources['projects']:
             self.test_project_operations()
         
+        if not self.created_resources['resources']:
+            self.test_resource_operations()
+        
         if self.created_resources['projects']:
             project_id = self.created_resources['projects'][0]
+            resource_id = self.created_resources['resources'][0] if self.created_resources['resources'] else None
             
-            # Create milestone
+            # Test 1: Create milestone with basic data
             milestone_data = {
                 "title": "Project Kickoff",
                 "description": "Initial project meeting and setup",
@@ -270,29 +274,110 @@ class ProjectManagementAPITester:
             }
             
             success, milestone = self.run_test(
-                "Create Milestone",
+                "Create Milestone - Basic",
                 "POST",
                 "milestones",
                 200,
                 data=milestone_data
             )
             
+            milestone_id = None
             if success and 'id' in milestone:
                 milestone_id = milestone['id']
                 self.created_resources['milestones'].append(milestone_id)
                 
-                # Get project milestones
-                success, milestones = self.run_test(
-                    "Get Project Milestones",
-                    "GET",
-                    f"projects/{project_id}/milestones",
-                    200
+                # Verify milestone fields
+                required_fields = ['id', 'title', 'description', 'due_date', 'project_id', 'completed']
+                for field in required_fields:
+                    if field in milestone:
+                        self.log_test(f"Create Milestone - {field} field", True, f"Value: {milestone[field]}")
+                    else:
+                        self.log_test(f"Create Milestone - {field} field", False, "", f"Missing field: {field}")
+            
+            # Test 2: Create milestone with resource assignment
+            if resource_id:
+                milestone_with_resource_data = {
+                    "title": "Development Phase",
+                    "description": "Core development milestone",
+                    "due_date": "2024-06-01T00:00:00Z",
+                    "project_id": project_id,
+                    "assigned_resource_id": resource_id
+                }
+                
+                success, milestone_with_resource = self.run_test(
+                    "Create Milestone - With Resource",
+                    "POST",
+                    "milestones",
+                    200,
+                    data=milestone_with_resource_data
                 )
                 
-                if success and isinstance(milestones, list):
-                    self.log_test("Get Project Milestones", True, f"Found {len(milestones)} milestones")
+                if success and 'id' in milestone_with_resource:
+                    milestone_with_resource_id = milestone_with_resource['id']
+                    self.created_resources['milestones'].append(milestone_with_resource_id)
+                    
+                    # Verify resource assignment
+                    if milestone_with_resource.get('assigned_resource_id') == resource_id:
+                        self.log_test("Milestone Resource Assignment", True, f"Resource {resource_id} assigned")
+                    else:
+                        self.log_test("Milestone Resource Assignment", False, "", "Resource assignment failed")
+            
+            # Test 3: Get project milestones
+            success, milestones = self.run_test(
+                "Get Project Milestones",
+                "GET",
+                f"projects/{project_id}/milestones",
+                200
+            )
+            
+            if success and isinstance(milestones, list):
+                self.log_test("Get Project Milestones", True, f"Found {len(milestones)} milestones")
                 
-                # Complete milestone
+                # Verify milestones contain expected data
+                for milestone in milestones:
+                    if milestone.get('project_id') == project_id:
+                        self.log_test("Milestone Project ID Consistency", True, f"Milestone belongs to project {project_id}")
+                    else:
+                        self.log_test("Milestone Project ID Consistency", False, "", f"Milestone has wrong project_id: {milestone.get('project_id')}")
+            
+            # Test 4: Update milestone
+            if milestone_id:
+                update_data = {
+                    "title": "Updated Project Kickoff",
+                    "description": "Updated description for kickoff meeting",
+                    "due_date": "2024-02-15T00:00:00Z"
+                }
+                
+                if resource_id:
+                    update_data["assigned_resource_id"] = resource_id
+                
+                success, updated_milestone = self.run_test(
+                    "Update Milestone",
+                    "PUT",
+                    f"milestones/{milestone_id}",
+                    200,
+                    data=update_data
+                )
+                
+                if success:
+                    # Verify updates
+                    if updated_milestone.get('title') == update_data['title']:
+                        self.log_test("Milestone Update - Title", True, f"Title updated to: {updated_milestone['title']}")
+                    else:
+                        self.log_test("Milestone Update - Title", False, "", "Title update failed")
+                    
+                    if updated_milestone.get('description') == update_data['description']:
+                        self.log_test("Milestone Update - Description", True, "Description updated successfully")
+                    else:
+                        self.log_test("Milestone Update - Description", False, "", "Description update failed")
+                    
+                    if resource_id and updated_milestone.get('assigned_resource_id') == resource_id:
+                        self.log_test("Milestone Update - Resource Assignment", True, f"Resource {resource_id} assigned via update")
+                    elif resource_id:
+                        self.log_test("Milestone Update - Resource Assignment", False, "", "Resource assignment via update failed")
+            
+            # Test 5: Complete milestone
+            if milestone_id:
                 success, result = self.run_test(
                     "Complete Milestone",
                     "PUT",
@@ -302,6 +387,100 @@ class ProjectManagementAPITester:
                 
                 if success:
                     self.log_test("Complete Milestone", True, "Milestone marked as completed")
+            
+            # Test 6: Test date validation - milestone outside project timeline
+            invalid_milestone_data = {
+                "title": "Invalid Date Milestone",
+                "description": "This should fail due to invalid date",
+                "due_date": "2025-12-31T00:00:00Z",  # Outside project end date
+                "project_id": project_id
+            }
+            
+            success, invalid_milestone = self.run_test(
+                "Create Milestone - Invalid Date (Expected to Pass)",
+                "POST",
+                "milestones",
+                200,  # Backend doesn't validate dates currently
+                data=invalid_milestone_data
+            )
+            
+            if success:
+                self.log_test("Date Validation", False, "", "Backend should validate milestone dates against project timeline")
+                if 'id' in invalid_milestone:
+                    self.created_resources['milestones'].append(invalid_milestone['id'])
+            
+            # Test 7: Test with invalid project ID
+            invalid_project_milestone = {
+                "title": "Invalid Project Milestone",
+                "description": "This should fail",
+                "due_date": "2024-06-01T00:00:00Z",
+                "project_id": "non-existent-project-id"
+            }
+            
+            success, result = self.run_test(
+                "Create Milestone - Invalid Project ID",
+                "POST",
+                "milestones",
+                200,  # Backend doesn't validate project existence currently
+                data=invalid_project_milestone
+            )
+            
+            if success:
+                self.log_test("Project ID Validation", False, "", "Backend should validate project existence")
+                if 'id' in result:
+                    self.created_resources['milestones'].append(result['id'])
+            
+            # Test 8: Update non-existent milestone
+            success, result = self.run_test(
+                "Update Non-existent Milestone",
+                "PUT",
+                f"milestones/non-existent-milestone-id",
+                404,
+                data={"title": "Should fail"}
+            )
+            
+            if success:
+                self.log_test("Update Non-existent Milestone", True, "Correctly returned 404 for non-existent milestone")
+            
+            # Test 9: Delete milestone
+            if len(self.created_resources['milestones']) > 1:
+                milestone_to_delete = self.created_resources['milestones'][-1]
+                success, result = self.run_test(
+                    "Delete Milestone",
+                    "DELETE",
+                    f"milestones/{milestone_to_delete}",
+                    200
+                )
+                
+                if success:
+                    self.log_test("Delete Milestone", True, "Milestone deleted successfully")
+                    self.created_resources['milestones'].remove(milestone_to_delete)
+                    
+                    # Verify deletion by trying to get the deleted milestone
+                    success, result = self.run_test(
+                        "Verify Milestone Deletion",
+                        "GET",
+                        f"projects/{project_id}/milestones",
+                        200
+                    )
+                    
+                    if success and isinstance(result, list):
+                        deleted_milestone_found = any(m.get('id') == milestone_to_delete for m in result)
+                        if not deleted_milestone_found:
+                            self.log_test("Verify Milestone Deletion", True, "Deleted milestone not found in list")
+                        else:
+                            self.log_test("Verify Milestone Deletion", False, "", "Deleted milestone still appears in list")
+            
+            # Test 10: Delete non-existent milestone
+            success, result = self.run_test(
+                "Delete Non-existent Milestone",
+                "DELETE",
+                f"milestones/non-existent-milestone-id",
+                404
+            )
+            
+            if success:
+                self.log_test("Delete Non-existent Milestone", True, "Correctly returned 404 for non-existent milestone")
         
         return len(self.created_resources['milestones']) > 0
 
