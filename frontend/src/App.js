@@ -2741,7 +2741,7 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Dates</SelectItem>
-                  <SelectItem value="recent">Recent Projects</SelectItem>
+                  <SelectItem value="newest">Newest First</SelectItem>
                   <SelectItem value="range">Date Range</SelectItem>
                 </SelectContent>
               </Select>
