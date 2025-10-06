@@ -144,6 +144,13 @@ class MilestoneCreate(BaseModel):
     description: Optional[str] = None
     due_date: datetime
     project_id: str
+    assigned_resource_id: Optional[str] = None
+
+class MilestoneUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    assigned_resource_id: Optional[str] = None
 
 class Expense(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
