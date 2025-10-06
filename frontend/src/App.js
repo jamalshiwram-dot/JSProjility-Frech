@@ -454,7 +454,7 @@ const MilestoneDetailEdit = ({ milestone, projectId, projectStartDate, projectEn
     }
   };
 
-  const assignedResource = projectResources?.find(r => r.id === formData.assigned_resource_id);
+  const assignedResource = projectResources?.find(r => r.id === formData.assigned_resource_id && formData.assigned_resource_id !== 'none');
 
   return (
     <div className="space-y-6">
