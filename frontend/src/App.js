@@ -2728,7 +2728,6 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
                 <SelectContent>
                   <SelectItem value="desc">Highest to Lowest</SelectItem>
                   <SelectItem value="asc">Lowest to Highest</SelectItem>
-                  <SelectItem value="none">Newest First</SelectItem>
                 </SelectContent>
               </Select>
             </div>
