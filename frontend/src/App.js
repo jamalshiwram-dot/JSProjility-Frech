@@ -2604,6 +2604,12 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Timeline:</span>
+              <span className="text-gray-900">
+                {formatDateShort(project.start_date)} - {formatDateShort(project.end_date)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Status:</span>
               <span className={timeline.isOverdue || timeline.isDangerZone ? 'text-red-600 font-medium' : 'text-gray-900'}>
                 {timeline.isOverdue ? `${timeline.daysOverdue} days overdue` : `${timeline.daysRemaining} days left`}
               </span>
