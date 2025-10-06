@@ -2633,6 +2633,36 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Milestone Detail/Edit Dialog */}
+      <Dialog open={showMilestoneDetail} onOpenChange={setShowMilestoneDetail}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedMilestone ? (milestoneEditMode ? 'Edit Milestone' : 'Milestone Details') : 'Create Milestone'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedMilestone ? (milestoneEditMode ? 'Update milestone information and assignments.' : 'View milestone details and manage assignments.') : 'Create a new milestone for this project.'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedMilestone && (
+            <MilestoneDetailEdit
+              milestone={selectedMilestone}
+              projectId={project.id}
+              projectStartDate={project.start_date}
+              projectEndDate={project.end_date}
+              projectResources={resources}
+              onMilestoneUpdated={handleMilestoneDetailUpdated}
+              onClose={() => {
+                setShowMilestoneDetail(false);
+                setSelectedMilestone(null);
+                setMilestoneEditMode(false);
+              }}
+              isEditing={milestoneEditMode}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
