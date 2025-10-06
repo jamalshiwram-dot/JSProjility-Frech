@@ -550,6 +550,173 @@ class ProjectManagementAPITester:
         
         return True
 
+    def test_milestone_endpoints_specific(self):
+        """Test specific milestone endpoints as requested in review"""
+        print("\n🔍 Testing Specific Milestone Endpoints...")
+        
+        if not self.created_resources['projects']:
+            self.test_project_operations()
+        
+        if not self.created_resources['resources']:
+            self.test_resource_operations()
+        
+        if self.created_resources['projects']:
+            project_id = self.created_resources['projects'][0]
+            resource_id = self.created_resources['resources'][0] if self.created_resources['resources'] else None
+            
+            # Test POST /api/projects/{project_id}/milestones - but this endpoint doesn't exist in backend
+            # The actual endpoint is POST /api/milestones
+            print("⚠️  Note: Backend uses POST /api/milestones instead of POST /api/projects/{project_id}/milestones")
+            
+            # Test milestone creation with project-specific endpoint pattern
+            milestone_data = {
+                "title": "Endpoint Test Milestone",
+                "description": "Testing specific endpoint patterns",
+                "due_date": "2024-03-01T00:00:00Z",
+                "project_id": project_id,
+                "assigned_resource_id": resource_id
+            }
+            
+            success, milestone = self.run_test(
+                "POST /api/milestones (Milestone Creation)",
+                "POST",
+                "milestones",
+                200,
+                data=milestone_data
+            )
+            
+            milestone_id = None
+            if success and 'id' in milestone:
+                milestone_id = milestone['id']
+                self.created_resources['milestones'].append(milestone_id)
+                
+                # Test PUT /api/projects/{project_id}/milestones/{milestone_id} - but this doesn't exist
+                # The actual endpoint is PUT /api/milestones/{milestone_id}
+                print("⚠️  Note: Backend uses PUT /api/milestones/{milestone_id} instead of PUT /api/projects/{project_id}/milestones/{milestone_id}")
+                
+                update_data = {
+                    "title": "Updated Endpoint Test Milestone",
+                    "description": "Updated via specific endpoint test",
+                    "due_date": "2024-03-15T00:00:00Z",
+                    "assigned_resource_id": resource_id
+                }
+                
+                success, updated_milestone = self.run_test(
+                    "PUT /api/milestones/{milestone_id} (Milestone Update)",
+                    "PUT",
+                    f"milestones/{milestone_id}",
+                    200,
+                    data=update_data
+                )
+                
+                if success:
+                    # Test resource assignment functionality
+                    if updated_milestone.get('assigned_resource_id') == resource_id:
+                        self.log_test("Resource Assignment via Update", True, f"Resource {resource_id} successfully assigned")
+                    else:
+                        self.log_test("Resource Assignment via Update", False, "", "Resource assignment failed")
+                
+                # Test DELETE /api/projects/{project_id}/milestones/{milestone_id} - but this doesn't exist
+                # The actual endpoint is DELETE /api/milestones/{milestone_id}
+                print("⚠️  Note: Backend uses DELETE /api/milestones/{milestone_id} instead of DELETE /api/projects/{project_id}/milestones/{milestone_id}")
+                
+                success, result = self.run_test(
+                    "DELETE /api/milestones/{milestone_id} (Milestone Deletion)",
+                    "DELETE",
+                    f"milestones/{milestone_id}",
+                    200
+                )
+                
+                if success:
+                    self.log_test("Milestone Deletion via Endpoint", True, "Milestone successfully deleted")
+                    if milestone_id in self.created_resources['milestones']:
+                        self.created_resources['milestones'].remove(milestone_id)
+            
+            # Test edge cases
+            # Test with invalid project ID
+            success, result = self.run_test(
+                "Create Milestone - Invalid Project ID",
+                "POST",
+                "milestones",
+                200,  # Backend doesn't validate project existence
+                data={
+                    "title": "Invalid Project Test",
+                    "description": "Should validate project existence",
+                    "due_date": "2024-04-01T00:00:00Z",
+                    "project_id": "invalid-project-id-12345"
+                }
+            )
+            
+            if success:
+                self.log_test("Project ID Validation", False, "", "Backend should validate project existence before creating milestone")
+                if 'id' in result:
+                    self.created_resources['milestones'].append(result['id'])
+            
+            # Test with non-existent milestone ID
+            success, result = self.run_test(
+                "Update Non-existent Milestone",
+                "PUT",
+                "milestones/non-existent-milestone-12345",
+                404,
+                data={"title": "Should fail"}
+            )
+            
+            if success:
+                self.log_test("Non-existent Milestone Update", True, "Correctly returned 404")
+            
+            # Test date validation - milestone outside project timeline
+            # First get project details to check dates
+            success, project = self.run_test(
+                "Get Project for Date Validation",
+                "GET",
+                f"projects/{project_id}",
+                200
+            )
+            
+            if success:
+                project_start = project.get('start_date', '2024-01-01T00:00:00Z')
+                project_end = project.get('end_date', '2024-12-31T23:59:59Z')
+                
+                # Test milestone before project start
+                success, result = self.run_test(
+                    "Create Milestone - Before Project Start",
+                    "POST",
+                    "milestones",
+                    200,  # Backend doesn't validate dates
+                    data={
+                        "title": "Before Project Start",
+                        "description": "This milestone is before project start date",
+                        "due_date": "2023-12-01T00:00:00Z",
+                        "project_id": project_id
+                    }
+                )
+                
+                if success:
+                    self.log_test("Date Validation - Before Start", False, "", "Backend should validate milestone date is after project start")
+                    if 'id' in result:
+                        self.created_resources['milestones'].append(result['id'])
+                
+                # Test milestone after project end
+                success, result = self.run_test(
+                    "Create Milestone - After Project End",
+                    "POST",
+                    "milestones",
+                    200,  # Backend doesn't validate dates
+                    data={
+                        "title": "After Project End",
+                        "description": "This milestone is after project end date",
+                        "due_date": "2025-12-01T00:00:00Z",
+                        "project_id": project_id
+                    }
+                )
+                
+                if success:
+                    self.log_test("Date Validation - After End", False, "", "Backend should validate milestone date is before project end")
+                    if 'id' in result:
+                        self.created_resources['milestones'].append(result['id'])
+        
+        return True
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🚀 Starting Project Management API Tests...")
@@ -569,6 +736,7 @@ class ProjectManagementAPITester:
         self.test_project_operations()
         self.test_resource_operations()
         self.test_milestone_operations()
+        self.test_milestone_endpoints_specific()
         self.test_expense_operations()
         self.test_document_operations()
         
