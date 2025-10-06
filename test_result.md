@@ -311,18 +311,14 @@ test_plan:
   test_priority: "high_first"
 
 validation_issues_found:
-  - issue: "Date validation missing"
+  - issue: "SelectItem empty string value error"
     severity: "medium"
-    description: "Backend accepts milestone dates outside project timeline (before start_date or after end_date)"
-    recommendation: "Add validation to ensure milestone due_date is within project start_date and end_date"
-  - issue: "Project existence validation missing"
-    severity: "medium" 
-    description: "Backend accepts milestones with non-existent project_id without validation"
-    recommendation: "Add validation to verify project exists before creating milestone"
-  - issue: "Endpoint pattern mismatch"
+    description: "Browser console shows 'SelectItem must have a value prop that is not an empty string' error affecting project filtering dropdowns"
+    recommendation: "Fix SelectItem components in project filtering to use proper default values (e.g., 'none' instead of empty string) similar to milestone fix"
+  - issue: "Resource filtering implementation incomplete"
     severity: "low"
-    description: "Review request mentioned /api/projects/{id}/milestones endpoints but backend uses /api/milestones"
-    recommendation: "Consider implementing project-scoped milestone endpoints for better REST API design"
+    description: "Specific resource dropdown appears but may not filter projects effectively when resources are selected"
+    recommendation: "Verify resource-based project filtering logic is fully implemented and working"
 
 agent_communication:
   - agent: "main"
