@@ -2917,6 +2917,11 @@ function App() {
     setCurrentView('dashboard');
   };
 
+  const handleViewProjects = (filter = 'all') => {
+    setProjectListFilter(filter);
+    setCurrentView('projects-list');
+  };
+
   const handleProjectUpdated = (updatedProject) => {
     // Update the project in the projects list
     setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
