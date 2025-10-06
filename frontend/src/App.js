@@ -2880,6 +2880,7 @@ function App() {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [projectListFilter, setProjectListFilter] = useState('all');
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [loading, setLoading] = useState(true);
 
