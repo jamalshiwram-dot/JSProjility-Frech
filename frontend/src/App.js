@@ -57,6 +57,20 @@ const formatDate = (dateString) => {
   });
 };
 
+// Helper function to format date as mm/dd/yy (fixed for SSR hydration)
+const formatDateShort = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    // Use manual formatting to avoid hydration issues
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    return `${month}/${day}/${year}`;
+  } catch (error) {
+    return '';
+  }
+};
 // Helper function to calculate timeline progress
 const calculateTimelineProgress = (startDate, endDate) => {
   const start = new Date(startDate);
