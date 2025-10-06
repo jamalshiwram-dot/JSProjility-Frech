@@ -1736,6 +1736,9 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [showTimelineManager, setShowTimelineManager] = useState(false);
   const [showAddMilestone, setShowAddMilestone] = useState(false);
+  const [showMilestoneDetail, setShowMilestoneDetail] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState(null);
+  const [milestoneEditMode, setMilestoneEditMode] = useState(false);
 
   useEffect(() => {
     if (project) {
