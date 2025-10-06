@@ -2522,7 +2522,7 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
     }
 
     // Resource filter
-    if (filters.resourceId) {
+    if (filters.resourceId && filters.resourceId !== 'all') {
       // This would need to be implemented with resource data per project
       // For now, we'll implement a basic version
       filtered = filtered.filter(p => {
