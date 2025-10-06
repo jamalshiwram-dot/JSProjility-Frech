@@ -233,14 +233,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Resource dropdown in resource form"
-    - "Milestone CRUD operations" 
-    - "Milestone editing from Milestones tab"
-    - "Resource assignment in milestone editing"
-  stuck_tasks:
-    - "Resource dropdown in resource form"
+    - "Bidirectional sync between milestones and timeline"
+    - "Milestone completion functionality"
+    - "Form validation and date constraints"
+  stuck_tasks: []
   test_all: false
-  test_priority: "stuck_first"
+  test_priority: "high_first"
 
 validation_issues_found:
   - issue: "Date validation missing"
