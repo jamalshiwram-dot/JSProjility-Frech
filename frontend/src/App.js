@@ -2537,8 +2537,13 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
       filtered.sort((a, b) => (a.budget || 0) - (b.budget || 0));
     }
 
-    // Default sort by newest first if no budget sort
-    if (filters.budgetSort === 'none') {
+    // Date sort - newest first
+    if (filters.dateFilter === 'newest') {
+      filtered.sort((a, b) => new Date(b.created_at || b.start_date) - new Date(a.created_at || a.start_date));
+    }
+
+    // Default sort by newest first if no specific sorting
+    if (filters.budgetSort !== 'desc' && filters.budgetSort !== 'asc' && filters.dateFilter !== 'newest') {
       filtered.sort((a, b) => new Date(b.created_at || b.start_date) - new Date(a.created_at || a.start_date));
     }
 
