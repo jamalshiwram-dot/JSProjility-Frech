@@ -47,7 +47,6 @@ import {
   UploadIcon,
   DownloadIcon,
   FolderPlusIcon,
-  FolderIcon,
   CopyIcon,
   MoveIcon,
   PaletteIcon
