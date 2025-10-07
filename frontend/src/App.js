@@ -1771,9 +1771,17 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     }
   };
 
-  const navigateToFolder = (folderPath) => {
+  const navigateToFolder = async (folderPath) => {
     setCurrentFolder(folderPath);
-    fetchProjectData(); // This will refresh documents for the new folder
+    
+    // Fetch documents for the new folder
+    try {
+      const documentsRes = await axios.get(`${API}/projects/${project.id}/documents?folder_path=${folderPath}`);
+      setDocuments(documentsRes.data);
+    } catch (error) {
+      console.error('Error fetching documents for folder:', error);
+      toast.error('Failed to load folder contents');
+    }
   };
 
   const getFileIcon = (fileName) => {
