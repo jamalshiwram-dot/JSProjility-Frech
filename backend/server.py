@@ -193,6 +193,16 @@ class Document(BaseModel):
     approved_by: Optional[str] = None
     approved_at: Optional[datetime] = None
 
+class Folder(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    project_id: str
+    parent_path: str = "/"
+    folder_path: str
+    color: str = "#3B82F6"  # Default blue color
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class Project(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
