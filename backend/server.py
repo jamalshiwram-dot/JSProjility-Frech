@@ -686,7 +686,7 @@ async def upload_document(
     return {"message": "File uploaded successfully", "document": document}
 
 @api_router.get("/projects/{project_id}/documents", response_model=List[Document])
-async def get_project_documents(project_id: str, folder_path: str = "/"):
+async def get_project_documents(project_id: str, folder_path: str = Query("/")):
     documents = await db.documents.find({
         "project_id": project_id,
         "folder_path": folder_path
