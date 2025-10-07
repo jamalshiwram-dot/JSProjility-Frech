@@ -2562,43 +2562,229 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
         </TabsContent>
         
         <TabsContent value="documents">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Documents</CardTitle>
-              <CardDescription>Manage project documentation with version control</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {documents.map((document) => (
-                  <div key={document.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <FileTextIcon className="h-6 w-6 text-gray-400" />
-                      <div>
-                        <h4 className="font-medium">{document.name}</h4>
-                        <p className="text-sm text-gray-600">Version {document.version} • {document.status}</p>
-                        <p className="text-sm text-gray-600">Uploaded: {formatDate(document.uploaded_at)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge 
-                        className={document.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                 document.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                                 'bg-yellow-100 text-yellow-800'}
-                      >
-                        {document.status.replace('_', ' ')}
-                      </Badge>
-                      <Button size="sm" variant="outline">
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {documents.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">No documents uploaded for this project</p>
-                )}
+          <div className="space-y-4">
+            {/* Header and Actions */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">Project Documents</h3>
+                <p className="text-sm text-gray-600">Organize and manage your project files</p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex space-x-2">
+                <Button onClick={() => setShowCreateFolder(true)} variant="outline" size="sm">
+                  <FolderPlusIcon className="h-4 w-4 mr-2" />
+                  New Folder
+                </Button>
+                <Button onClick={() => setShowUploadDialog(true)} size="sm">
+                  <UploadIcon className="h-4 w-4 mr-2" />
+                  Add Documents
+                </Button>
+              </div>
+            </div>
+
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center space-x-2 text-sm">
+              {getBreadcrumbs().map((crumb, index) => (
+                <div key={index} className="flex items-center">
+                  {index > 0 && <span className="mx-2 text-gray-400">/</span>}
+                  <button
+                    onClick={() => {
+                      if (index === 0) {
+                        navigateToFolder('/');
+                      } else {
+                        const path = '/' + getBreadcrumbs().slice(1, index + 1).join('/');
+                        navigateToFolder(path);
+                      }
+                    }}
+                    className={`hover:text-blue-600 ${index === getBreadcrumbs().length - 1 ? 'font-medium text-gray-900' : 'text-gray-600'}`}
+                  >
+                    {crumb}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* File Manager */}
+            <Card>
+              <CardContent className="p-6">
+                {(() => {
+                  const { folders: currentFolders, documents: currentDocuments } = getCurrentFolderContents();
+                  
+                  if (currentFolders.length === 0 && currentDocuments.length === 0) {
+                    return (
+                      <div className="text-center py-12">
+                        <FolderIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Empty folder</h3>
+                        <p className="text-gray-600 mb-4">Upload documents or create folders to organize your files</p>
+                        <div className="flex justify-center space-x-2">
+                          <Button onClick={() => setShowUploadDialog(true)} variant="outline" size="sm">
+                            <UploadIcon className="h-4 w-4 mr-2" />
+                            Upload Files
+                          </Button>
+                          <Button onClick={() => setShowCreateFolder(true)} variant="outline" size="sm">
+                            <FolderPlusIcon className="h-4 w-4 mr-2" />
+                            Create Folder
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Folders */}
+                      {currentFolders.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-3">Folders</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                            {currentFolders.map((folder) => (
+                              <div
+                                key={folder.id}
+                                className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer group"
+                                onClick={() => navigateToFolder(folder.folder_path)}
+                              >
+                                <div 
+                                  className="w-8 h-8 rounded flex items-center justify-center mr-3"
+                                  style={{ backgroundColor: folder.color + '20', color: folder.color }}
+                                >
+                                  <FolderIcon className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{folder.name}</p>
+                                  <p className="text-xs text-gray-500">Created {formatDate(folder.created_at)}</p>
+                                </div>
+                                <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDocumentActionDialog({
+                                        show: true,
+                                        action: 'edit-folder',
+                                        document: folder
+                                      });
+                                    }}
+                                  >
+                                    <EditIcon className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (window.confirm('Are you sure you want to delete this folder and all its contents?')) {
+                                        handleDeleteFolder(folder.id);
+                                      }
+                                    }}
+                                  >
+                                    <TrashIcon className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Documents */}
+                      {currentDocuments.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-3">Files</h4>
+                          <div className="space-y-2">
+                            {currentDocuments.map((document) => (
+                              <div key={document.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 group">
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-2xl">{getFileIcon(document.name)}</span>
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">{document.name}</h4>
+                                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                      <span>Version {document.version}</span>
+                                      <span>•</span>
+                                      <span>{(document.file_size / 1024).toFixed(1)} KB</span>
+                                      <span>•</span>
+                                      <span>Uploaded: {formatDate(document.uploaded_at)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Badge 
+                                    className={document.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                             document.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                             'bg-yellow-100 text-yellow-800'}
+                                  >
+                                    {document.status.replace('_', ' ')}
+                                  </Badge>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleDownloadDocument(document.id, document.name)}
+                                  >
+                                    <DownloadIcon className="h-4 w-4 mr-2" />
+                                    Download
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setDocumentActionDialog({
+                                      show: true,
+                                      action: 'document-actions',
+                                      document: document
+                                    })}
+                                  >
+                                    <EditIcon className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Upload Dialog */}
+            {showUploadDialog && (
+              <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upload Documents</DialogTitle>
+                    <DialogDescription>
+                      Upload files to the current folder. Supported formats: Word, PDF, Excel, JPG, PNG, TXT
+                    </DialogDescription>
+                  </DialogHeader>
+                  <FileUploadComponent onFilesSelected={handleFileUpload} />
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {/* Create Folder Dialog */}
+            {showCreateFolder && (
+              <CreateFolderDialog
+                isOpen={showCreateFolder}
+                onClose={() => setShowCreateFolder(false)}
+                onCreate={handleCreateFolder}
+              />
+            )}
+
+            {/* Document Actions Dialog */}
+            {documentActionDialog.show && (
+              <DocumentActionsDialog
+                isOpen={documentActionDialog.show}
+                onClose={() => setDocumentActionDialog({ show: false, action: null, document: null })}
+                action={documentActionDialog.action}
+                document={documentActionDialog.document}
+                folders={folders}
+                currentFolder={currentFolder}
+                onMove={handleMoveDocument}
+                onCopy={handleCopyDocument}
+                onDelete={handleDeleteDocument}
+                onUpdateFolder={handleCreateFolder}
+              />
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
