@@ -1639,6 +1639,171 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     // This is handled automatically by the Select component since we didn't update the project.stage
   };
 
+  // Document Management Functions
+  const handleFileUpload = async (files) => {
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadParams = new URLSearchParams({
+        project_id: project.id,
+        folder_path: currentFolder,
+        uploaded_by: 'user'
+      });
+
+      try {
+        const response = await axios.post(`${API}/documents/upload?${uploadParams}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        return response.data;
+      } catch (error) {
+        console.error(`Error uploading ${file.name}:`, error);
+        toast.error(`Failed to upload ${file.name}`);
+        throw error;
+      }
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+      toast.success(`${files.length} file(s) uploaded successfully!`);
+      fetchProjectData(); // Refresh documents
+      setShowUploadDialog(false);
+    } catch (error) {
+      // Individual errors are already handled above
+    }
+  };
+
+  const handleCreateFolder = async (folderName, color) => {
+    try {
+      await axios.post(`${API}/projects/${project.id}/folders`, null, {
+        params: {
+          name: folderName,
+          parent_path: currentFolder,
+          color: color,
+          created_by: 'user'
+        }
+      });
+      toast.success('Folder created successfully!');
+      fetchProjectData(); // Refresh folders
+      setShowCreateFolder(false);
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast.error('Failed to create folder');
+    }
+  };
+
+  const handleDownloadDocument = async (documentId, fileName) => {
+    try {
+      const response = await axios.get(`${API}/documents/${documentId}/download`, {
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('File downloaded successfully!');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error('Failed to download file');
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    try {
+      await axios.delete(`${API}/documents/${documentId}`);
+      toast.success('Document deleted successfully!');
+      fetchProjectData(); // Refresh documents
+      setDocumentActionDialog({ show: false, action: null, document: null });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast.error('Failed to delete document');
+    }
+  };
+
+  const handleMoveDocument = async (documentId, newFolderPath) => {
+    try {
+      await axios.put(`${API}/documents/${documentId}/move`, null, {
+        params: { new_folder_path: newFolderPath }
+      });
+      toast.success('Document moved successfully!');
+      fetchProjectData(); // Refresh documents
+    } catch (error) {
+      console.error('Error moving document:', error);
+      toast.error('Failed to move document');
+    }
+  };
+
+  const handleCopyDocument = async (documentId, newFolderPath) => {
+    try {
+      await axios.post(`${API}/documents/${documentId}/copy`, null, {
+        params: { new_folder_path: newFolderPath }
+      });
+      toast.success('Document copied successfully!');
+      fetchProjectData(); // Refresh documents
+    } catch (error) {
+      console.error('Error copying document:', error);
+      toast.error('Failed to copy document');
+    }
+  };
+
+  const handleDeleteFolder = async (folderId) => {
+    try {
+      await axios.delete(`${API}/folders/${folderId}`);
+      toast.success('Folder deleted successfully!');
+      fetchProjectData(); // Refresh folders and documents
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      toast.error('Failed to delete folder');
+    }
+  };
+
+  const navigateToFolder = (folderPath) => {
+    setCurrentFolder(folderPath);
+    fetchProjectData(); // This will refresh documents for the new folder
+  };
+
+  const getFileIcon = (fileName) => {
+    const extension = fileName.split('.').pop().toLowerCase();
+    switch (extension) {
+      case 'pdf': return '📄';
+      case 'doc':
+      case 'docx': return '📝';
+      case 'xls':
+      case 'xlsx': return '📊';
+      case 'jpg':
+      case 'jpeg':
+      case 'png': return '🖼️';
+      case 'txt': return '📄';
+      default: return '📎';
+    }
+  };
+
+  const getBreadcrumbs = () => {
+    if (currentFolder === '/') return ['Home'];
+    const parts = currentFolder.split('/').filter(part => part !== '');
+    return ['Home', ...parts];
+  };
+
+  const getCurrentFolderContents = () => {
+    const currentFolders = folders.filter(folder => 
+      folder.parent_path === currentFolder
+    );
+    
+    const currentDocuments = documents.filter(doc => 
+      doc.folder_path === currentFolder
+    );
+    
+    return { folders: currentFolders, documents: currentDocuments };
+  };
+
   const handleResourceCreated = (newResource) => {
     if (editingResource) {
       // Update existing resource in list
