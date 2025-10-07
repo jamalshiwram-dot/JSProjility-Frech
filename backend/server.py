@@ -719,6 +719,130 @@ async def download_document(document_id: str):
     
     return FileResponse(file_path, filename=document["name"])
 
+# Folder Management
+@api_router.post("/projects/{project_id}/folders")
+async def create_folder(project_id: str, name: str, parent_path: str = "/", color: str = "#3B82F6", created_by: str = "user"):
+    # Check if folder already exists in the same parent path
+    existing_folder = await db.folders.find_one({
+        "project_id": project_id,
+        "name": name,
+        "parent_path": parent_path
+    })
+    
+    if existing_folder:
+        raise HTTPException(status_code=400, detail="Folder with this name already exists in this location")
+    
+    # Create folder path
+    folder_path = f"{parent_path.rstrip('/')}/{name}"
+    if parent_path == "/":
+        folder_path = f"/{name}"
+    
+    folder = Folder(
+        name=name,
+        project_id=project_id,
+        parent_path=parent_path,
+        folder_path=folder_path,
+        color=color,
+        created_by=created_by
+    )
+    
+    folder_data = prepare_for_mongo(folder.dict())
+    await db.folders.insert_one(folder_data)
+    
+    return {"message": "Folder created successfully", "folder": folder}
+
+@api_router.get("/projects/{project_id}/folders", response_model=List[Folder])
+async def get_project_folders(project_id: str):
+    folders = await db.folders.find({"project_id": project_id}).to_list(1000)
+    return [Folder(**parse_from_mongo(folder)) for folder in folders]
+
+@api_router.put("/folders/{folder_id}")
+async def update_folder(folder_id: str, name: Optional[str] = None, color: Optional[str] = None):
+    update_data = {}
+    if name:
+        update_data["name"] = name
+    if color:
+        update_data["color"] = color
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No update data provided")
+    
+    result = await db.folders.update_one(
+        {"id": folder_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    
+    return {"message": "Folder updated successfully"}
+
+@api_router.delete("/folders/{folder_id}")
+async def delete_folder(folder_id: str):
+    # First check if folder exists
+    folder = await db.folders.find_one({"id": folder_id})
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    
+    # Delete all documents in the folder
+    await db.documents.delete_many({"folder_path": folder["folder_path"]})
+    
+    # Delete all subfolders
+    await db.folders.delete_many({"parent_path": {"$regex": f"^{folder['folder_path']}"}})
+    
+    # Delete the folder itself
+    await db.folders.delete_one({"id": folder_id})
+    
+    return {"message": "Folder and all contents deleted successfully"}
+
+@api_router.put("/documents/{document_id}/move")
+async def move_document(document_id: str, new_folder_path: str):
+    result = await db.documents.update_one(
+        {"id": document_id},
+        {"$set": {"folder_path": new_folder_path}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    return {"message": "Document moved successfully"}
+
+@api_router.post("/documents/{document_id}/copy")
+async def copy_document(document_id: str, new_folder_path: str):
+    # Find the original document
+    original_doc = await db.documents.find_one({"id": document_id})
+    if not original_doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Create a copy with new ID and folder path
+    copied_doc = Document(**parse_from_mongo(original_doc))
+    copied_doc.id = str(uuid.uuid4())
+    copied_doc.folder_path = new_folder_path
+    copied_doc.name = f"Copy of {copied_doc.name}"
+    
+    # Insert the copy
+    copy_data = prepare_for_mongo(copied_doc.dict())
+    await db.documents.insert_one(copy_data)
+    
+    return {"message": "Document copied successfully", "document": copied_doc}
+
+@api_router.delete("/documents/{document_id}")
+async def delete_document(document_id: str):
+    # Find the document
+    document = await db.documents.find_one({"id": document_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Delete the physical file
+    file_path = document["file_path"]
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    
+    # Delete the document record
+    await db.documents.delete_one({"id": document_id})
+    
+    return {"message": "Document deleted successfully"}
+
 # Dashboard Analytics
 @api_router.put("/projects/{project_id}/stage")
 async def update_project_stage(project_id: str, stage: str):
