@@ -1535,6 +1535,14 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   const [milestoneEditMode, setMilestoneEditMode] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [pendingStageChange, setPendingStageChange] = useState(null);
+  
+  // Document management state
+  const [folders, setFolders] = useState([]);
+  const [currentFolder, setCurrentFolder] = useState("/");
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [documentActionDialog, setDocumentActionDialog] = useState({ show: false, action: null, document: null });
 
   useEffect(() => {
     if (project) {
