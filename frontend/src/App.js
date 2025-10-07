@@ -1552,12 +1552,13 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
 
   const fetchProjectData = async () => {
     try {
-      const [resourcesRes, milestonesRes, expensesRes, budgetRes, documentsRes] = await Promise.all([
+      const [resourcesRes, milestonesRes, expensesRes, budgetRes, documentsRes, foldersRes] = await Promise.all([
         axios.get(`${API}/projects/${project.id}/resources`),
         axios.get(`${API}/projects/${project.id}/milestones`),
         axios.get(`${API}/projects/${project.id}/expenses`),
         axios.get(`${API}/projects/${project.id}/budget-summary`),
-        axios.get(`${API}/projects/${project.id}/documents`)
+        axios.get(`${API}/projects/${project.id}/documents?folder_path=${currentFolder}`),
+        axios.get(`${API}/projects/${project.id}/folders`)
       ]);
       
       setResources(resourcesRes.data);
