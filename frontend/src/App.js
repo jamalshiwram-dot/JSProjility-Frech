@@ -152,8 +152,11 @@ const Dashboard = ({ projects, onProjectSelect, onViewProjects }) => {
     overdue_milestones: 0
   });
 
-  // Calculate timeline-based stats
+  // Calculate timeline-based stats (excluding closed projects)
   const timelineStats = projects ? projects.reduce((acc, project) => {
+    // Skip closed projects - they cannot be "at risk"
+    if (project.stage === 'closed') return acc;
+    
     const timeline = calculateTimelineProgress(project.start_date, project.end_date);
     if (timeline.isOverdue) acc.overdue++;
     if (timeline.isDangerZone) acc.dangerZone++;
