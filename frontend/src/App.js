@@ -3260,27 +3260,105 @@ const DocumentActionsDialog = ({
 
         {(action === 'move' || action === 'copy') && (
           <div className="space-y-4">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl">{action === 'move' ? '📁' : '📋'}</span>
+                <div>
+                  <h4 className="font-medium text-blue-900">
+                    {action === 'move' ? 'Move Document' : 'Copy Document'}
+                  </h4>
+                  <p className="text-sm text-blue-700">
+                    {action === 'move' 
+                      ? 'The document will be moved from the current folder to the selected destination.'
+                      : 'A copy of the document will be created in the selected destination folder.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-600 mb-2">Current Document:</p>
+              <div className="flex items-center space-x-2">
+                <span>{getFileIcon(document.name)}</span>
+                <span className="font-medium">{document.name}</span>
+              </div>
+            </div>
+            
             <div>
-              <Label>Select Destination Folder</Label>
+              <Label className="text-sm font-medium">Select Destination Folder</Label>
               <Select value={selectedFolder} onValueChange={setSelectedFolder}>
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Choose a folder..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {getFolderOptions().map((option) => (
-                    <SelectItem key={option.path} value={option.path}>
-                      {option.name}
+                  <SelectItem value="/" className="font-medium">
+                    <div className="flex items-center space-x-2">
+                      <FolderIcon className="h-4 w-4" />
+                      <span>📁 Root Folder</span>
+                    </div>
+                  </SelectItem>
+                  {folders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.folder_path}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded" 
+                          style={{ backgroundColor: folder.color }}
+                        />
+                        <span>📁 {folder.name}</span>
+                        <span className="text-xs text-gray-500">({folder.folder_path})</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end space-x-2">
+            
+            {selectedFolder && selectedFolder !== currentFolder && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded">
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-600">✓</span>
+                  <span className="text-sm text-green-700">
+                    {action === 'move' ? 'Ready to move' : 'Ready to copy'} to: 
+                    <span className="font-medium ml-1">
+                      {selectedFolder === '/' ? 'Root Folder' : folders.find(f => f.folder_path === selectedFolder)?.name}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {selectedFolder === currentFolder && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-600">⚠</span>
+                  <span className="text-sm text-yellow-700">
+                    This document is already in the selected folder. Please choose a different destination.
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-2 pt-2">
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button onClick={handleAction}>
-                {action === 'move' ? 'Move' : 'Copy'} Document
+              <Button 
+                onClick={handleAction}
+                disabled={!selectedFolder || selectedFolder === currentFolder}
+                className={action === 'move' ? '' : 'bg-blue-600 hover:bg-blue-700'}
+              >
+                {action === 'move' ? (
+                  <>
+                    <MoveIcon className="h-4 w-4 mr-2" />
+                    Move Document
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon className="h-4 w-4 mr-2" />
+                    Copy Document
+                  </>
+                )}
               </Button>
             </div>
           </div>
