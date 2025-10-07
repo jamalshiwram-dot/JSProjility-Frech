@@ -43,7 +43,14 @@ import {
   TableIcon,
   SearchIcon,
   ArrowLeftIcon,
-  RefreshCwIcon
+  RefreshCwIcon,
+  UploadIcon,
+  DownloadIcon,
+  FolderPlusIcon,
+  FolderIcon,
+  CopyIcon,
+  MoveIcon,
+  PaletteIcon
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://pm-dashboard-5.preview.emergentagent.com';
