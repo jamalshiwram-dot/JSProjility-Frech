@@ -808,7 +808,7 @@ async def move_document(document_id: str, new_folder_path: str = Query(...)):
     return {"message": "Document moved successfully"}
 
 @api_router.post("/documents/{document_id}/copy")
-async def copy_document(document_id: str, new_folder_path: str):
+async def copy_document(document_id: str, new_folder_path: str = Query(...)):
     # Find the original document
     original_doc = await db.documents.find_one({"id": document_id})
     if not original_doc:
