@@ -2491,6 +2491,315 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   );
 };
 
+// Expense List Component
+const ExpenseList = ({ projects, onBack }) => {
+  const [allExpenses, setAllExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    search: '',
+    projectFilter: 'all',
+    resourceFilter: 'all'
+  });
+  const [projectMap, setProjectMap] = useState({});
+  const [resourceMap, setResourceMap] = useState({});
+
+  // Fetch all expenses from all projects
+  useEffect(() => {
+    const fetchAllExpenses = async () => {
+      setLoading(true);
+      try {
+        const expensePromises = projects.map(async (project) => {
+          try {
+            const [expensesRes, resourcesRes] = await Promise.all([
+              axios.get(`${API}/projects/${project.id}/expenses`),
+              axios.get(`${API}/projects/${project.id}/resources`)
+            ]);
+            
+            return {
+              projectId: project.id,
+              projectName: project.name,
+              expenses: expensesRes.data || [],
+              resources: resourcesRes.data || []
+            };
+          } catch (error) {
+            console.error(`Error fetching data for project ${project.id}:`, error);
+            return {
+              projectId: project.id,
+              projectName: project.name,
+              expenses: [],
+              resources: []
+            };
+          }
+        });
+
+        const results = await Promise.all(expensePromises);
+        
+        // Build project and resource maps
+        const newProjectMap = {};
+        const newResourceMap = {};
+        
+        results.forEach(({ projectId, projectName, resources }) => {
+          newProjectMap[projectId] = projectName;
+          resources.forEach(resource => {
+            newResourceMap[resource.id] = {
+              name: resource.name,
+              type: resource.type,
+              projectName: projectName
+            };
+          });
+        });
+
+        setProjectMap(newProjectMap);
+        setResourceMap(newResourceMap);
+
+        // Flatten all expenses and add project information
+        const flatExpenses = results.flatMap(({ projectId, projectName, expenses }) =>
+          expenses.map(expense => ({
+            ...expense,
+            projectId,
+            projectName,
+            resourceName: expense.resource_id ? (newResourceMap[expense.resource_id]?.name || 'Unknown Resource') : 'No Resource Linked',
+            resourceType: expense.resource_id ? (newResourceMap[expense.resource_id]?.type || 'Unknown') : 'N/A'
+          }))
+        );
+
+        // Sort by date (newest first)
+        flatExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        setAllExpenses(flatExpenses);
+        setFilteredExpenses(flatExpenses);
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+        toast.error('Failed to load expenses');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (projects.length > 0) {
+      fetchAllExpenses();
+    }
+  }, [projects]);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...allExpenses];
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(expense => 
+        expense.description.toLowerCase().includes(searchLower) ||
+        expense.projectName.toLowerCase().includes(searchLower) ||
+        expense.resourceName.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Project filter
+    if (filters.projectFilter !== 'all') {
+      filtered = filtered.filter(expense => expense.projectId === filters.projectFilter);
+    }
+
+    // Resource filter
+    if (filters.resourceFilter !== 'all') {
+      if (filters.resourceFilter === 'no-resource') {
+        filtered = filtered.filter(expense => !expense.resource_id);
+      } else {
+        filtered = filtered.filter(expense => expense.resource_id === filters.resourceFilter);
+      }
+    }
+
+    setFilteredExpenses(filtered);
+  }, [allExpenses, filters]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const getUniqueResources = () => {
+    const resourcesWithExpenses = Object.entries(resourceMap)
+      .filter(([resourceId]) => allExpenses.some(expense => expense.resource_id === resourceId))
+      .map(([resourceId, resource]) => ({
+        id: resourceId,
+        name: resource.name,
+        type: resource.type,
+        projectName: resource.projectName
+      }));
+    
+    return resourcesWithExpenses.sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading expenses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-900">All Expenses</h1>
+          <Badge variant="outline" className="text-sm">
+            {filteredExpenses.length} expenses • Total: {formatCurrency(filteredExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0))}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <FilterIcon className="h-5 w-5 mr-2" />
+            Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Search */}
+            <div>
+              <Label htmlFor="expense-search">Search Expenses</Label>
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="expense-search"
+                  placeholder="Search by description, project, or resource"
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Project Filter */}
+            <div>
+              <Label htmlFor="project-filter">Filter by Project</Label>
+              <Select value={filters.projectFilter} onValueChange={(value) => handleFilterChange('projectFilter', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Resource Filter */}
+            <div>
+              <Label htmlFor="resource-filter">Filter by Resource</Label>
+              <Select value={filters.resourceFilter} onValueChange={(value) => handleFilterChange('resourceFilter', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Resources</SelectItem>
+                  <SelectItem value="no-resource">No Resource Linked</SelectItem>
+                  {getUniqueResources().map((resource) => (
+                    <SelectItem key={resource.id} value={resource.id}>
+                      {resource.name} ({resource.type}) - {resource.projectName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Expenses Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Project
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Linked Resource
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredExpenses.map((expense) => (
+                  <tr key={`${expense.projectId}-${expense.id}`} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{expense.description}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-green-600">
+                        {formatCurrency(expense.amount || 0)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{expense.projectName}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {expense.resourceName}
+                        {expense.resourceType !== 'N/A' && (
+                          <span className="text-gray-500 ml-1">({expense.resourceType})</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant="outline" className="text-xs">
+                        {expense.expense_type.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(expense.date)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {filteredExpenses.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <DollarSignIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
+            <p className="text-gray-600">Try adjusting your filters to see more expenses.</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 // Project List Component with Filtering
 const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect }) => {
   const [filteredProjects, setFilteredProjects] = useState(projects);
