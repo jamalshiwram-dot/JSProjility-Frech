@@ -1550,6 +1550,21 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
     }
   }, [project]);
 
+  // Fetch documents when current folder changes
+  useEffect(() => {
+    if (project && currentFolder !== '/') {
+      const fetchFolderDocuments = async () => {
+        try {
+          const documentsRes = await axios.get(`${API}/projects/${project.id}/documents?folder_path=${currentFolder}`);
+          setDocuments(documentsRes.data);
+        } catch (error) {
+          console.error('Error fetching folder documents:', error);
+        }
+      };
+      fetchFolderDocuments();
+    }
+  }, [currentFolder, project]);
+
   const fetchProjectData = async () => {
     try {
       const [resourcesRes, milestonesRes, expensesRes, budgetRes, documentsRes, foldersRes] = await Promise.all([
