@@ -2859,6 +2859,332 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   );
 };
 
+// File Upload Component
+const FileUploadComponent = ({ onFilesSelected }) => {
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const fileInputRef = useRef(null);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    setSelectedFiles(files);
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+  };
+
+  const acceptedTypes = ".doc,.docx,.pdf,.xls,.xlsx,.jpg,.jpeg,.png,.txt";
+
+  return (
+    <div className="space-y-4">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center ${
+          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-lg font-medium text-gray-700 mb-2">
+          Drop files here or click to browse
+        </p>
+        <p className="text-sm text-gray-600 mb-4">
+          Supports: Word, PDF, Excel, JPG, PNG, TXT files
+        </p>
+        <Button variant="outline">
+          Choose Files
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept={acceptedTypes}
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+      </div>
+
+      {selectedFiles.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="font-medium">Selected Files:</h4>
+          {selectedFiles.map((file, index) => (
+            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+              <span className="text-sm">{file.name}</span>
+              <span className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</span>
+            </div>
+          ))}
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setSelectedFiles([])}>
+              Cancel
+            </Button>
+            <Button onClick={() => onFilesSelected(selectedFiles)}>
+              Upload {selectedFiles.length} File{selectedFiles.length !== 1 ? 's' : ''}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Create Folder Dialog Component
+const CreateFolderDialog = ({ isOpen, onClose, onCreate }) => {
+  const [folderName, setFolderName] = useState('');
+  const [selectedColor, setSelectedColor] = useState('#3B82F6');
+
+  const predefinedColors = [
+    '#3B82F6', // Blue
+    '#10B981', // Green
+    '#F59E0B', // Yellow
+    '#EF4444', // Red
+    '#8B5CF6', // Purple
+    '#F97316', // Orange
+    '#06B6D4', // Cyan
+    '#84CC16', // Lime
+  ];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (folderName.trim()) {
+      onCreate(folderName.trim(), selectedColor);
+      setFolderName('');
+      setSelectedColor('#3B82F6');
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Folder</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="folder-name">Folder Name</Label>
+            <Input
+              id="folder-name"
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              placeholder="Enter folder name"
+              required
+            />
+          </div>
+          <div>
+            <Label>Folder Color</Label>
+            <div className="flex space-x-2 mt-2">
+              {predefinedColors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setSelectedColor(color)}
+                  className={`w-8 h-8 rounded-full border-2 ${
+                    selectedColor === color ? 'border-gray-400' : 'border-gray-200'
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              Create Folder
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Document Actions Dialog Component
+const DocumentActionsDialog = ({ 
+  isOpen, 
+  onClose, 
+  action, 
+  document, 
+  folders, 
+  currentFolder, 
+  onMove, 
+  onCopy, 
+  onDelete,
+  onUpdateFolder 
+}) => {
+  const [selectedFolder, setSelectedFolder] = useState('/');
+  const [folderName, setFolderName] = useState(document?.name || '');
+  const [folderColor, setFolderColor] = useState(document?.color || '#3B82F6');
+
+  const predefinedColors = [
+    '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
+    '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'
+  ];
+
+  const handleAction = () => {
+    if (action === 'move') {
+      onMove(document.id, selectedFolder);
+    } else if (action === 'copy') {
+      onCopy(document.id, selectedFolder);
+    } else if (action === 'delete') {
+      onDelete(document.id);
+    } else if (action === 'edit-folder') {
+      onUpdateFolder(folderName, folderColor);
+    }
+    onClose();
+  };
+
+  const getFolderOptions = () => {
+    const options = [{ path: '/', name: 'Root Folder' }];
+    folders.forEach(folder => {
+      options.push({ path: folder.folder_path, name: folder.folder_path });
+    });
+    return options;
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {action === 'move' && 'Move Document'}
+            {action === 'copy' && 'Copy Document'}
+            {action === 'delete' && 'Delete Document'}
+            {action === 'edit-folder' && 'Edit Folder'}
+            {action === 'document-actions' && 'Document Actions'}
+          </DialogTitle>
+        </DialogHeader>
+
+        {action === 'document-actions' && (
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => {
+                onClose();
+                // This would trigger move action
+                setSelectedFolder(currentFolder);
+                // Reopen with move action
+              }}
+            >
+              <MoveIcon className="h-4 w-4 mr-2" />
+              Move to Folder
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => {
+                onClose();
+                // This would trigger copy action
+              }}
+            >
+              <CopyIcon className="h-4 w-4 mr-2" />
+              Copy to Folder
+            </Button>
+            <Button 
+              variant="destructive" 
+              className="w-full justify-start"
+              onClick={() => {
+                if (window.confirm('Are you sure you want to delete this document?')) {
+                  onDelete(document.id);
+                  onClose();
+                }
+              }}
+            >
+              <TrashIcon className="h-4 w-4 mr-2" />
+              Delete Document
+            </Button>
+          </div>
+        )}
+
+        {(action === 'move' || action === 'copy') && (
+          <div className="space-y-4">
+            <div>
+              <Label>Select Destination Folder</Label>
+              <Select value={selectedFolder} onValueChange={setSelectedFolder}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {getFolderOptions().map((option) => (
+                    <SelectItem key={option.path} value={option.path}>
+                      {option.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleAction}>
+                {action === 'move' ? 'Move' : 'Copy'} Document
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {action === 'edit-folder' && (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-folder-name">Folder Name</Label>
+              <Input
+                id="edit-folder-name"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Folder Color</Label>
+              <div className="flex space-x-2 mt-2">
+                {predefinedColors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setFolderColor(color)}
+                    className={`w-8 h-8 rounded-full border-2 ${
+                      folderColor === color ? 'border-gray-400' : 'border-gray-200'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleAction}>
+                Update Folder
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Expense List Component
 const ExpenseList = ({ projects, onBack }) => {
   const [allExpenses, setAllExpenses] = useState([]);
