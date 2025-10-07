@@ -1542,6 +1542,7 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [documentActionDialog, setDocumentActionDialog] = useState({ show: false, action: null, document: null });
+  const [dragOverFolder, setDragOverFolder] = useState(null);
 
   useEffect(() => {
     if (project) {
