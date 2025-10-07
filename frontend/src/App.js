@@ -1566,6 +1566,7 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
       setExpenses(expensesRes.data);
       setBudgetSummary(budgetRes.data);
       setDocuments(documentsRes.data);
+      setFolders(foldersRes.data);
     } catch (error) {
       console.error('Error fetching project data:', error);
     }
