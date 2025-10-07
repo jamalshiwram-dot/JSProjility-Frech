@@ -3225,11 +3225,7 @@ const DocumentActionsDialog = ({
               className="w-full justify-start"
               onClick={() => {
                 // Switch to move selection mode
-                setDocumentActionDialog({
-                  show: true,
-                  action: 'move',
-                  document: document
-                });
+                onActionChange('move');
               }}
             >
               <MoveIcon className="h-4 w-4 mr-2" />
@@ -3240,11 +3236,7 @@ const DocumentActionsDialog = ({
               className="w-full justify-start"
               onClick={() => {
                 // Switch to copy selection mode
-                setDocumentActionDialog({
-                  show: true,
-                  action: 'copy',
-                  document: document
-                });
+                onActionChange('copy');
               }}
             >
               <CopyIcon className="h-4 w-4 mr-2" />
