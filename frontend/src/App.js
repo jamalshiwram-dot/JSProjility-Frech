@@ -3794,6 +3794,9 @@ const ProjectList = ({ projects, initialFilter = 'all', onBack, onProjectSelect 
       filtered = filtered.filter(p => p.stage !== 'closed');
     } else if (filters.status === 'risk') {
       filtered = filtered.filter(p => {
+        // Skip closed projects - they cannot be "at risk"
+        if (p.stage === 'closed') return false;
+        
         const timeline = calculateTimelineProgress(p.start_date, p.end_date);
         return timeline.isOverdue || timeline.isDangerZone;
       });
