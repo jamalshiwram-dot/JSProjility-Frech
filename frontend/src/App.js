@@ -2946,8 +2946,12 @@ function App() {
   };
 
   const handleViewProjects = (filter = 'all') => {
-    setProjectListFilter(filter);
-    setCurrentView('projects-list');
+    if (filter === 'expenses') {
+      setCurrentView('expenses-list');
+    } else {
+      setProjectListFilter(filter);
+      setCurrentView('projects-list');
+    }
   };
 
   const handleProjectUpdated = (updatedProject) => {
