@@ -3172,7 +3172,8 @@ const DocumentActionsDialog = ({
   onMove, 
   onCopy, 
   onDelete,
-  onUpdateFolder 
+  onUpdateFolder,
+  onActionChange 
 }) => {
   const [selectedFolder, setSelectedFolder] = useState('/');
   const [folderName, setFolderName] = useState(document?.name || '');
