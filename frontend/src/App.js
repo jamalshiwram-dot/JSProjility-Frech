@@ -3336,6 +3336,13 @@ function App() {
             onProjectSelect={handleProjectSelect}
           />
         )}
+
+        {currentView === 'expenses-list' && (
+          <ExpenseList
+            projects={projects}
+            onBack={handleBackToDashboard}
+          />
+        )}
         
         {currentView === 'project-detail' && selectedProject && (
           <ProjectDetail 
