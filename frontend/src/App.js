@@ -2639,8 +2639,36 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
                             {currentFolders.map((folder) => (
                               <div
                                 key={folder.id}
-                                className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer group"
+                                className={`flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer group transition-colors ${
+                                  dragOverFolder === folder.id ? 'border-blue-500 bg-blue-50' : ''
+                                }`}
                                 onClick={() => navigateToFolder(folder.folder_path)}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.dataTransfer.dropEffect = 'move';
+                                  setDragOverFolder(folder.id);
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault();
+                                  setDragOverFolder(null);
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDragOverFolder(null);
+                                  
+                                  try {
+                                    const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+                                    if (dragData.type === 'document') {
+                                      // Move the document to this folder
+                                      handleMoveDocument(dragData.id, folder.folder_path);
+                                      toast.success(`"${dragData.name}" moved to "${folder.name}" folder`);
+                                    }
+                                  } catch (error) {
+                                    console.error('Error parsing drag data:', error);
+                                    toast.error('Failed to move document');
+                                  }
+                                }}
                               >
                                 <div 
                                   className="w-8 h-8 rounded flex items-center justify-center mr-3"
