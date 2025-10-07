@@ -2605,7 +2605,40 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
 
             {/* File Manager */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent 
+                className={`p-6 transition-colors ${
+                  dragOverFolder === 'root' ? 'bg-blue-50' : ''
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  if (currentFolder !== '/') {
+                    setDragOverFolder('root');
+                  }
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setDragOverFolder(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverFolder(null);
+                  
+                  if (currentFolder === '/') return; // Already in root
+                  
+                  try {
+                    const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (dragData.type === 'document') {
+                      // Move the document to root folder
+                      handleMoveDocument(dragData.id, '/');
+                      toast.success(`"${dragData.name}" moved to root folder`);
+                    }
+                  } catch (error) {
+                    console.error('Error parsing drag data:', error);
+                    toast.error('Failed to move document');
+                  }
+                }}
+              >
                 {(() => {
                   const { folders: currentFolders, documents: currentDocuments } = getCurrentFolderContents();
                   
