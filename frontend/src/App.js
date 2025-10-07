@@ -1749,12 +1749,15 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
         params: { new_folder_path: newFolderPath }
       });
       
-      // Update the documents state immediately to remove the moved document from current view
+      // For move operation, remove the document from current view immediately
       setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== documentId));
       
-      toast.success('Document moved successfully!');
+      const folderName = newFolderPath === '/' ? 'Root Folder' : 
+        folders.find(f => f.folder_path === newFolderPath)?.name || 'Selected Folder';
       
-      // Also refresh the full project data to ensure consistency
+      toast.success(`Document moved to "${folderName}" successfully!`);
+      
+      // Refresh project data to ensure consistency
       fetchProjectData(); 
     } catch (error) {
       console.error('Error moving document:', error);
