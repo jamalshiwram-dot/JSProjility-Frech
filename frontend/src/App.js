@@ -2691,7 +2691,25 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
                           <h4 className="text-sm font-medium text-gray-700 mb-3">Files</h4>
                           <div className="space-y-2">
                             {currentDocuments.map((document) => (
-                              <div key={document.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 group">
+                              <div 
+                                key={document.id} 
+                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 group cursor-move"
+                                draggable="true"
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData('text/plain', JSON.stringify({
+                                    type: 'document',
+                                    id: document.id,
+                                    name: document.name
+                                  }));
+                                  e.dataTransfer.effectAllowed = 'move';
+                                  // Add visual feedback
+                                  e.currentTarget.style.opacity = '0.5';
+                                }}
+                                onDragEnd={(e) => {
+                                  // Reset visual feedback
+                                  e.currentTarget.style.opacity = '1';
+                                }}
+                              >
                                 <div className="flex items-center space-x-3">
                                   <span className="text-2xl">{getFileIcon(document.name)}</span>
                                   <div>
