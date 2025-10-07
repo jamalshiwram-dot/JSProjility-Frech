@@ -1733,8 +1733,14 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
       await axios.put(`${API}/documents/${documentId}/move`, null, {
         params: { new_folder_path: newFolderPath }
       });
+      
+      // Update the documents state immediately to remove the moved document from current view
+      setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== documentId));
+      
       toast.success('Document moved successfully!');
-      fetchProjectData(); // Refresh documents
+      
+      // Also refresh the full project data to ensure consistency
+      fetchProjectData(); 
     } catch (error) {
       console.error('Error moving document:', error);
       toast.error('Failed to move document');
