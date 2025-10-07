@@ -1764,11 +1764,20 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
 
   const handleCopyDocument = async (documentId, newFolderPath) => {
     try {
-      await axios.post(`${API}/documents/${documentId}/copy`, null, {
+      const response = await axios.post(`${API}/documents/${documentId}/copy`, null, {
         params: { new_folder_path: newFolderPath }
       });
-      toast.success('Document copied successfully!');
-      fetchProjectData(); // Refresh documents
+      
+      // For copy operation, we don't remove the original file from current view
+      // The original stays in the current folder, and a copy is created in the destination
+      
+      const folderName = newFolderPath === '/' ? 'Root Folder' : 
+        folders.find(f => f.folder_path === newFolderPath)?.name || 'Selected Folder';
+      
+      toast.success(`Document copied to "${folderName}" successfully!`);
+      
+      // Refresh project data to ensure we have the latest state
+      fetchProjectData();
     } catch (error) {
       console.error('Error copying document:', error);
       toast.error('Failed to copy document');
