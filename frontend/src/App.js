@@ -2595,12 +2595,45 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
                         navigateToFolder(path);
                       }
                     }}
-                    className={`hover:text-blue-600 ${index === getBreadcrumbs().length - 1 ? 'font-medium text-gray-900' : 'text-gray-600'}`}
+                    className={`hover:text-blue-600 px-2 py-1 rounded transition-colors ${
+                      index === getBreadcrumbs().length - 1 ? 'font-medium text-gray-900' : 'text-gray-600'
+                    } ${dragOverFolder === `breadcrumb-${index}` ? 'bg-blue-100 text-blue-600' : ''}`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverFolder(`breadcrumb-${index}`);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setDragOverFolder(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragOverFolder(null);
+                      
+                      try {
+                        const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+                        if (dragData.type === 'document') {
+                          const targetPath = index === 0 ? '/' : '/' + getBreadcrumbs().slice(1, index + 1).join('/');
+                          handleMoveDocument(dragData.id, targetPath);
+                          toast.success(`"${dragData.name}" moved to "${crumb}" folder`);
+                        }
+                      } catch (error) {
+                        console.error('Error parsing drag data:', error);
+                        toast.error('Failed to move document');
+                      }
+                    }}
                   >
                     {crumb}
                   </button>
                 </div>
               ))}
+              {dragOverFolder && dragOverFolder.startsWith('breadcrumb') && (
+                <div className="text-xs text-blue-600 ml-2">
+                  Drop here to move file
+                </div>
+              )}
             </div>
 
             {/* File Manager */}
