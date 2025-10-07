@@ -2744,7 +2744,9 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-gray-900 truncate">{folder.name}</p>
-                                  <p className="text-xs text-gray-500">Created {formatDate(folder.created_at)}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {dragOverFolder === folder.id ? 'Drop file here' : `Created ${formatDate(folder.created_at)}`}
+                                  </p>
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
                                   <Button
