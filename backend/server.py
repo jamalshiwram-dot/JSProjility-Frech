@@ -796,7 +796,7 @@ async def delete_folder(folder_id: str):
     return {"message": "Folder and all contents deleted successfully"}
 
 @api_router.put("/documents/{document_id}/move")
-async def move_document(document_id: str, new_folder_path: str):
+async def move_document(document_id: str, new_folder_path: str = Query(...)):
     result = await db.documents.update_one(
         {"id": document_id},
         {"$set": {"folder_path": new_folder_path}}
