@@ -3223,10 +3223,12 @@ const DocumentActionsDialog = ({
               variant="outline" 
               className="w-full justify-start"
               onClick={() => {
-                onClose();
-                // This would trigger move action
-                setSelectedFolder(currentFolder);
-                // Reopen with move action
+                // Switch to move selection mode
+                setDocumentActionDialog({
+                  show: true,
+                  action: 'move',
+                  document: document
+                });
               }}
             >
               <MoveIcon className="h-4 w-4 mr-2" />
@@ -3236,8 +3238,12 @@ const DocumentActionsDialog = ({
               variant="outline" 
               className="w-full justify-start"
               onClick={() => {
-                onClose();
-                // This would trigger copy action
+                // Switch to copy selection mode
+                setDocumentActionDialog({
+                  show: true,
+                  action: 'copy',
+                  document: document
+                });
               }}
             >
               <CopyIcon className="h-4 w-4 mr-2" />
