@@ -2925,6 +2925,10 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
                 onCopy={handleCopyDocument}
                 onDelete={handleDeleteDocument}
                 onUpdateFolder={handleCreateFolder}
+                onActionChange={(newAction) => setDocumentActionDialog({
+                  ...documentActionDialog,
+                  action: newAction
+                })}
               />
             )}
           </div>
