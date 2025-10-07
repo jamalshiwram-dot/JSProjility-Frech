@@ -2929,6 +2929,7 @@ const ProjectDetail = ({ project, onBack, onProjectUpdated }) => {
                   ...documentActionDialog,
                   action: newAction
                 })}
+                getFileIcon={getFileIcon}
               />
             )}
           </div>
